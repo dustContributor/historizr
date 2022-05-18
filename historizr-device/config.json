@@ -1,0 +1,10 @@
+{
+  "broker": "tcp://localhost:1883",
+  "db": "jdbc:sqlite:historizr.db",
+  "clientId": "historizr-device",
+  "hasClientIdUuid": true,
+  "apiPort": 8888,
+  "inputTopic": "/input/#",
+  "outputTopic": "/output/",
+  "hasDebugTopic": true
+}
