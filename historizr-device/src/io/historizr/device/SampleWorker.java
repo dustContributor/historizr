@@ -37,13 +37,13 @@ public final class SampleWorker extends AbstractVerticle {
 		});
 		deleted.handler(e -> {
 			signalRepo.removeSignal(e.body());
+			sampleRepo.removeSample(e.body().id());
 		});
 	}
 
 	@Override
 	public final void stop() throws Exception {
-		var signalRepo = this.sampleRepo;
-		try (signalRepo) {
+		try (var sampleRepo = this.sampleRepo) {
 			// Close.
 		}
 	}
