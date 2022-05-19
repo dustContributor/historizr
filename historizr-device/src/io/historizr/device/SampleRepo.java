@@ -30,7 +30,7 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	public final SampleRepo init(SignalRepo signalRepo) throws MqttException {
-		this.signalRepo = signalRepo;
+		this.signalRepo = Objects.requireNonNull(signalRepo);
 		var clientId = cfg.hasClientIdUuid() ? cfg.clientId() + '_' + UUID.randomUUID() : cfg.clientId();
 		client = new MqttClient(cfg.broker(), clientId);
 		client.connect();
@@ -45,7 +45,7 @@ public final class SampleRepo implements AutoCloseable {
 		deferred.shutdown();
 	}
 
-	private record DeferredPublish(MqttClient client, String topic, MqttMessage message) implements Runnable {
+	private static record DeferredPublish(MqttClient client, String topic, MqttMessage message) implements Runnable {
 		@Override
 		public final void run() {
 			try {
@@ -54,6 +54,18 @@ public final class SampleRepo implements AutoCloseable {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	private static final Sample sampleOf(DataType.Catalog dataType, MqttMessage msg, OffsetDateTime now) {
+		return switch (dataType) {
+		case BOOL -> Sample.OfBool.of(msg.toString(), now);
+		case F32 -> Sample.OfFloat.of(msg.toString(), now);
+		case F64 -> Sample.OfDouble.of(msg.toString(), now);
+		case I64 -> Sample.OfLong.of(msg.toString(), now);
+		case STR -> Sample.OfString.of(msg.toString(), now);
+		// Late call msg.toString to avoid parsing payload if the type is unknown.
+		default -> null;
+		};
 	}
 
 	private final void handleMessage(String topic, MqttMessage msg) {
@@ -69,15 +81,7 @@ public final class SampleRepo implements AutoCloseable {
 			return;
 		}
 		var mappedType = DataType.Catalog.of(dataType.mappingId());
-		Sample sample = switch (mappedType) {
-		case BOOL -> Sample.OfBool.of(msg.toString(), now);
-		case F32 -> Sample.OfFloat.of(msg.toString(), now);
-		case F64 -> Sample.OfDouble.of(msg.toString(), now);
-		case I64 -> Sample.OfLong.of(msg.toString(), now);
-		case STR -> Sample.OfString.of(msg.toString(), now);
-		// Late call msg.toString to avoid parsing payload if the type is unknown.
-		default -> null;
-		};
+		var sample = sampleOf(mappedType, msg, now);
 		if (sample == null) {
 			// Unrecognized data type.
 			return;
@@ -89,7 +93,7 @@ public final class SampleRepo implements AutoCloseable {
 				return;
 			}
 			if (existing.tstamp.compareTo(sample.tstamp) > 0) {
-				// Somehow we got an older sample.
+				// Somehow we got an older sample, dont update.
 				return;
 			}
 		}
@@ -119,7 +123,7 @@ public final class SampleRepo implements AutoCloseable {
 
 	public final void debugOutput() {
 		try {
-			client.subscribe(cfg.outputTopic() + "#", (topic, msg) -> {
+			client.subscribe(cfg.outputTopic() + '#', (topic, msg) -> {
 				System.out.println("%s: %s".formatted(topic, msg));
 			});
 		} catch (MqttException e) {

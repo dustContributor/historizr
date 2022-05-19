@@ -1,9 +1,5 @@
 package io.historizr.device;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
-
 import io.historizr.device.db.Db;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Launcher;
@@ -21,17 +17,9 @@ public final class Main extends AbstractVerticle {
 
 	static final Object LOCK = new Object();
 
-	static Config readConfig() {
-		try {
-			return OpsJson.reader().readValue(Path.of("config.json").toFile(), Config.class);
-		} catch (IOException e1) {
-			throw new UncheckedIOException(e1);
-		}
-	}
-
 	@Override
 	public void start() throws Exception {
-		var cfg = readConfig();
+		var cfg = Config.read();
 		// Db connection shared across handlers.
 		var jdbc = JDBCClient.createShared(vertx,
 				new JsonObject().put("url", cfg.db()));
@@ -66,7 +54,7 @@ public final class Main extends AbstractVerticle {
 	}
 
 	public static void main2(String[] args) {
-		var cfg = readConfig();
+		var cfg = Config.read();
 		var signalRepo = new SignalRepo(cfg);
 		signalRepo.init();
 		try (var sampleRepo = new SampleRepo(cfg)) {

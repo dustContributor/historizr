@@ -9,7 +9,7 @@ public record DataType(int id, int mappingId, String name) {
 		return new DataType(rs.getInt(1), rs.getInt(2), rs.getString(3));
 	}
 
-	public enum Catalog {
+	public static enum Catalog {
 		UNKNOWN(0),
 		BOOL(1),
 		I64(9),
