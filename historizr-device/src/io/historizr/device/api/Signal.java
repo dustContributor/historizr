@@ -1,6 +1,7 @@
 package io.historizr.device.api;
 
 import static io.historizr.device.OpsMisc.hasFailed;
+import static io.historizr.device.OpsMisc.sendJson;
 
 import io.historizr.device.db.Db;
 import io.vertx.core.eventbus.EventBus;
@@ -46,7 +47,7 @@ public final class Signal {
 							return;
 						}
 						var res = r.result().getRows().get(0);
-						bus.send(EVENT_INSERTED, res.mapTo(signalModel));
+						sendJson(bus, EVENT_INSERTED, res);
 						ctx.json(res);
 					});
 				});
@@ -64,7 +65,7 @@ public final class Signal {
 							return;
 						}
 						var res = r.result().getRows().get(0);
-						bus.send(EVENT_UPDATED, res.mapTo(signalModel));
+						sendJson(bus, EVENT_UPDATED, res);
 						ctx.json(res);
 					});
 				});
@@ -79,7 +80,7 @@ public final class Signal {
 						var res = r.result();
 						if (res.getUpdated() > 0) {
 							var entity = new io.historizr.device.db.Signal(pars.getLong(0), 0, null, null, false);
-							bus.send(EVENT_DELETED, entity);
+							sendJson(bus, EVENT_DELETED, entity);
 						}
 						ctx.json(new Object() {
 							@SuppressWarnings("unused")

@@ -1,17 +1,27 @@
 package io.historizr.device;
 
-import io.historizr.device.api.Signal;
+import static io.historizr.device.api.Signal.EVENT_DELETED;
+import static io.historizr.device.api.Signal.EVENT_INSERTED;
+import static io.historizr.device.api.Signal.EVENT_UPDATED;
+
+import java.util.function.Consumer;
+
+import io.historizr.device.db.Signal;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.json.JsonObject;
 
 public final class SampleWorker extends AbstractVerticle {
 	public static final String NAME = SampleWorker.class.getName();
 	private SignalRepo signalRepo;
 	private SampleRepo sampleRepo;
+	private MessageConsumer<JsonObject> inserted;
+	private MessageConsumer<JsonObject> updated;
+	private MessageConsumer<JsonObject> deleted;
 
-	private static MessageConsumer<io.historizr.device.db.Signal> signalConsumer(EventBus bus, String name) {
-		return bus.<io.historizr.device.db.Signal>consumer(name);
+	private static MessageConsumer<JsonObject> handle(EventBus bus, String event, Consumer<Signal> handler) {
+		return bus.<JsonObject>consumer(event).handler(e -> handler.accept(e.body().mapTo(Signal.class)));
 	}
 
 	@Override
@@ -26,23 +36,23 @@ public final class SampleWorker extends AbstractVerticle {
 			sampleRepo.debugOutput();
 		}
 		sampleRepo.subscribe();
-		var inserted = signalConsumer(bus, Signal.EVENT_INSERTED);
-		var updated = signalConsumer(bus, Signal.EVENT_UPDATED);
-		var deleted = signalConsumer(bus, Signal.EVENT_DELETED);
-		inserted.handler(e -> {
-			signalRepo.updateSignal(e.body());
+		inserted = handle(bus, EVENT_INSERTED, e -> {
+			signalRepo.updateSignal(e);
 		});
-		updated.handler(e -> {
-			signalRepo.updateSignal(e.body());
+		updated = handle(bus, EVENT_UPDATED, e -> {
+			signalRepo.updateSignal(e);
 		});
-		deleted.handler(e -> {
-			signalRepo.removeSignal(e.body());
-			sampleRepo.removeSample(e.body().id());
+		deleted = handle(bus, EVENT_DELETED, e -> {
+			signalRepo.removeSignal(e);
+			sampleRepo.removeSample(e.id());
 		});
 	}
 
 	@Override
 	public final void stop() throws Exception {
+		inserted.unregister().wait();
+		updated.unregister().wait();
+		deleted.unregister().wait();
 		try (var sampleRepo = this.sampleRepo) {
 			// Close.
 		}

@@ -86,7 +86,7 @@ public final class SampleRepo implements AutoCloseable {
 			return;
 		}
 		var oid = Long.valueOf(signal.id());
-		samplesById.compute(oid, (key, existing) -> {
+		var changed = samplesById.compute(oid, (key, existing) -> {
 			if (existing != null) {
 				if (signal.isOnChange() && !existing.hasDifferentValue(sample)) {
 					// Signal only emits values on change and it's the same.
@@ -100,6 +100,10 @@ public final class SampleRepo implements AutoCloseable {
 			// Passed the check so just update it.
 			return sample;
 		});
+		if (sample != changed) {
+			// Existing sample didn't get updated, wont emit.
+			return;
+		}
 		// Encode and send via mqtt.
 		byte[] payload;
 		try {
