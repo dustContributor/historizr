@@ -1,7 +1,7 @@
 package io.historizr.device;
 
-import io.historizr.device.db.Db;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
@@ -15,15 +15,16 @@ public final class Main extends AbstractVerticle {
 //		throw new RuntimeException();
 //	}
 
-	static final Object LOCK = new Object();
-
 	@Override
-	public void start() throws Exception {
+	public final void start() throws Exception {
 		var cfg = Config.read();
 		// Db connection shared across handlers.
 		var jdbc = JDBCClient.createShared(vertx,
 				new JsonObject().put("url", cfg.db()));
 //		PRAGMA foreign_keys = ON;
+		vertx.deployVerticle(SampleWorker::new, new DeploymentOptions()
+				.setWorker(true)
+				.setConfig(cfg.toJson()));
 		// Web router.
 		var router = Router.router(vertx);
 		// Pretty errors.
@@ -31,9 +32,8 @@ public final class Main extends AbstractVerticle {
 		// Capture data passed as the body of requests.
 		router.route().handler(BodyHandler.create(false));
 		// Register api endpoints.
-		io.historizr.device.api.Signal.register(router, jdbc);
-		io.historizr.device.api.DataType.register(router, jdbc);
-
+		io.historizr.device.api.Signal.register(vertx.eventBus(), router, jdbc);
+		io.historizr.device.api.DataType.register(vertx.eventBus(), router, jdbc);
 		// Create the HTTP server
 		vertx.createHttpServer()
 				// Handle every request using the router
@@ -45,30 +45,7 @@ public final class Main extends AbstractVerticle {
 						"HTTP server started on port " + server.actualPort()));
 	}
 
-	public static void main3(String[] args) {
-		System.out.println(Db.Sql.QUERY_SIGNAL);
-	}
-
 	public static void main(String[] args) {
 		Launcher.main(args);
 	}
-
-	public static void main2(String[] args) {
-		var cfg = Config.read();
-		var signalRepo = new SignalRepo(cfg);
-		signalRepo.init();
-		try (var sampleRepo = new SampleRepo(cfg)) {
-			sampleRepo.init(signalRepo);
-			if (cfg.hasDebugTopic()) {
-				sampleRepo.debugOutput();
-			}
-			sampleRepo.subscribe();
-			synchronized (LOCK) {
-				LOCK.wait();
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 }

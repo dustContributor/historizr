@@ -3,6 +3,7 @@ package io.historizr.device.api;
 import static io.historizr.device.OpsMisc.hasFailed;
 
 import io.historizr.device.db.Db;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.web.Router;
 
@@ -13,7 +14,7 @@ public class DataType {
 
 	private static final String ROUTE = "/datatype";
 
-	public static Router register(Router router, JDBCClient conn) {
+	public static Router register(EventBus bus, Router router, JDBCClient conn) {
 		router.get(ROUTE)
 				.handler(ctx -> {
 					conn.query(Db.Sql.QUERY_DATA_TYPE, r -> {

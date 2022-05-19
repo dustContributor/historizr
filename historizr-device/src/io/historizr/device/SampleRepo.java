@@ -2,10 +2,9 @@ package io.historizr.device;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,7 +20,7 @@ import io.historizr.device.db.Sample;
 public final class SampleRepo implements AutoCloseable {
 	private final Config cfg;
 	private final ExecutorService deferred = Executors.newSingleThreadExecutor();
-	private final Map<Long, Sample> samplesById = new HashMap<>();
+	private final ConcurrentHashMap<Long, Sample> samplesById = new ConcurrentHashMap<>();
 	private MqttClient client;
 	private SignalRepo signalRepo;
 
@@ -86,19 +85,21 @@ public final class SampleRepo implements AutoCloseable {
 			// Unrecognized data type.
 			return;
 		}
-		var existing = samplesById.get(signal.id());
-		if (existing != null) {
-			if (signal.isOnChange() && !existing.hasDifferentValue(sample)) {
-				// Signal only emits values on change and it's the same.
-				return;
+		var oid = Long.valueOf(signal.id());
+		samplesById.compute(oid, (key, existing) -> {
+			if (existing != null) {
+				if (signal.isOnChange() && !existing.hasDifferentValue(sample)) {
+					// Signal only emits values on change and it's the same.
+					return existing;
+				}
+				if (existing.tstamp.compareTo(sample.tstamp) > 0) {
+					// Somehow we got an older sample, dont update.
+					return existing;
+				}
 			}
-			if (existing.tstamp.compareTo(sample.tstamp) > 0) {
-				// Somehow we got an older sample, dont update.
-				return;
-			}
-		}
-		// Update our in-memory catalog of samples.
-		samplesById.put(signal.id(), sample);
+			// Passed the check so just update it.
+			return sample;
+		});
 		// Encode and send via mqtt.
 		byte[] payload;
 		try {
@@ -111,6 +112,11 @@ public final class SampleRepo implements AutoCloseable {
 		var outTopic = cfg.outputTopic() + signal.name();
 		// Cant publish from the method that handles the subscription event.
 		deferred.execute(new DeferredPublish(client, outTopic, outMsg));
+	}
+
+	public final void removeSample(long id) {
+		var oid = Long.valueOf(id);
+		samplesById.remove(oid);
 	}
 
 	public final void subscribe() {

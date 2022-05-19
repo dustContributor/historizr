@@ -19,5 +19,4 @@ public final class OpsMisc {
 		ctx.fail(res.cause());
 		return true;
 	}
-
 }

@@ -10,6 +10,7 @@ import io.historizr.device.db.Db;
 import io.historizr.device.db.Signal;
 
 public final class SignalRepo {
+	private final Object signalsLock = new Object();
 	private final Config cfg;
 	private Map<String, Signal> signalsByTopic;
 	private Map<Long, Signal> signalsById;
@@ -47,12 +48,43 @@ public final class SignalRepo {
 		return this;
 	}
 
+	public final void updateSignal(Signal signal) {
+		var id = Long.valueOf(signal.id());
+		synchronized (signalsLock) {
+			var old = signalsById.get(id);
+			if (old != null && !Objects.equals(old.topic(), signal.topic())) {
+				// Topic got updated so we remove it by the old stale topic key.
+				signalsByTopic.remove(old.topic());
+			}
+			// These will either insert or update the existing entries.
+			signalsById.put(id, signal);
+			signalsByTopic.put(signal.topic(), signal);
+		}
+	}
+
+	public final boolean removeSignal(Signal signal) {
+		var id = Long.valueOf(signal.id());
+		var isRemoved = false;
+		synchronized (signalsLock) {
+			var old = signalsById.remove(id);
+			isRemoved = old != null;
+			if (isRemoved) {
+				signalsByTopic.remove(old.topic());
+			}
+		}
+		return isRemoved;
+	}
+
 	public final Signal signalByTopic(String topic) {
-		return signalsByTopic.get(topic);
+		synchronized (signalsLock) {
+			return signalsByTopic.get(topic);
+		}
 	}
 
 	public final Signal signalById(long id) {
-		return signalsById.get(Long.valueOf(id));
+		synchronized (signalsLock) {
+			return signalsById.get(Long.valueOf(id));
+		}
 	}
 
 	public final DataType dataTypeById(int id) {
