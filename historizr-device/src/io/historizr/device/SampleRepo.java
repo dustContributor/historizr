@@ -75,7 +75,7 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	private final void handleMessage(String topic, MqttMessage msg) {
-		LOGGER.fine(() -> "Incoming message: " + msg);
+		LOGGER.fine(() -> "Incoming message:topic: " + msg + ":" + topic);
 		var now = OffsetDateTime.now(ZoneOffset.UTC);
 		var signal = signalRepo.signalByTopic(topic);
 		if (signal == null) {
