@@ -16,14 +16,20 @@ public final class Main extends AbstractVerticle {
 
 	@Override
 	public final void start() throws Exception {
+		LOGGER.info("Starting...");
 		var cfg = Config.read();
 		// Db connection shared across handlers.
+		// Would be nice to have PRAGMA foreign_keys = ON;
+		LOGGER.info("Creating JDBC client...");
 		var jdbc = JDBCClient.createShared(vertx,
 				new JsonObject().put("url", cfg.db()));
-//		PRAGMA foreign_keys = ON;
+		LOGGER.info("Created!");
+		LOGGER.info("Deploying sample worker...");
 		vertx.deployVerticle(SampleWorker::new, new DeploymentOptions()
 				.setWorker(true)
 				.setConfig(cfg.toJson()));
+		LOGGER.info("Deployed!");
+		LOGGER.info("Configuring HTTP api...");
 		// Web router.
 		var router = Router.router(vertx);
 		// Pretty errors.
@@ -33,6 +39,8 @@ public final class Main extends AbstractVerticle {
 		// Register api endpoints.
 		io.historizr.device.api.Signal.register(vertx.eventBus(), router, jdbc);
 		io.historizr.device.api.DataType.register(vertx.eventBus(), router, jdbc);
+		LOGGER.info("Configured!");
+		LOGGER.info("Creating HTTP server...");
 		// Create the HTTP server
 		vertx.createHttpServer()
 				// Handle every request using the router
@@ -40,7 +48,8 @@ public final class Main extends AbstractVerticle {
 				// Start listening
 				.listen(cfg.apiPort())
 				// Print the port
-				.onSuccess(server -> LOGGER.info("HTTP server started on port " + server.actualPort()));
+				.onSuccess(server -> LOGGER.info("HTTP server created on port " + server.actualPort() + "!"));
+		LOGGER.info("Started!");
 	}
 
 	public static void main(String[] args) {
