@@ -93,7 +93,7 @@ public final class SampleRepo implements AutoCloseable {
 		var sample = sampleOf(mappedType, msg, now);
 		if (sample == null) {
 			LOGGER.warning(() -> "Unrecognized mapped data type for signal: " + signal + ", mapped to: "
-					+ dataType.mappingId());
+					+ dataType);
 			// Unrecognized mapped data type. Shouldn't happen.
 			return;
 		}
