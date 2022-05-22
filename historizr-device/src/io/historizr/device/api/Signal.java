@@ -3,6 +3,9 @@ package io.historizr.device.api;
 import static io.historizr.device.OpsMisc.hasFailed;
 import static io.historizr.device.OpsMisc.sendJson;
 
+import java.util.logging.Logger;
+
+import io.historizr.device.OpsJson;
 import io.historizr.device.db.Db;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
@@ -15,6 +18,7 @@ public final class Signal {
 	}
 
 	private static final String EVENT_ROOT = Signal.class.getName();
+	private final static Logger LOGGER = Logger.getLogger(EVENT_ROOT);
 	public static final String EVENT_INSERTED = EVENT_ROOT + ".inserted";
 	public static final String EVENT_UPDATED = EVENT_ROOT + ".updated";
 	public static final String EVENT_DELETED = EVENT_ROOT + ".deleted";
@@ -47,6 +51,7 @@ public final class Signal {
 							return;
 						}
 						var res = r.result().getRows().get(0);
+						LOGGER.fine(() -> "POST " + res);
 						sendJson(bus, EVENT_INSERTED, res);
 						ctx.json(res);
 					});
@@ -65,6 +70,7 @@ public final class Signal {
 							return;
 						}
 						var res = r.result().getRows().get(0);
+						LOGGER.fine(() -> "PUT " + res);
 						sendJson(bus, EVENT_UPDATED, res);
 						ctx.json(res);
 					});
@@ -82,6 +88,7 @@ public final class Signal {
 							var entity = new io.historizr.device.db.Signal(pars.getLong(0), 0, null, null, false);
 							sendJson(bus, EVENT_DELETED, entity);
 						}
+						LOGGER.fine(() -> "DELETE " + OpsJson.toString(res));
 						ctx.json(new Object() {
 							@SuppressWarnings("unused")
 							public int getUpdated() {

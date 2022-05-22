@@ -3,6 +3,7 @@ package io.historizr.device;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.historizr.device.db.DataType;
@@ -10,6 +11,7 @@ import io.historizr.device.db.Db;
 import io.historizr.device.db.Signal;
 
 public final class SignalRepo {
+	private final static Logger LOGGER = Logger.getLogger(SignalRepo.class.getName());
 	private final Object signalsLock = new Object();
 	private final Config cfg;
 	private Map<String, Signal> signalsByTopic;
@@ -21,8 +23,10 @@ public final class SignalRepo {
 	}
 
 	public final SignalRepo init() {
+		LOGGER.info("Initializing...");
 		var signals = new ArrayList<Signal>();
 		var dataTypes = new ArrayList<DataType>();
+		LOGGER.info("Querying data...");
 		try (var db = cfg.toDb();
 				var conn = db.connect().conn();
 				var sSt = db.prepare(Db.Sql.QUERY_SIGNAL);
@@ -40,15 +44,18 @@ public final class SignalRepo {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+		LOGGER.info("Data queried!");
 
 		signalsByTopic = signals.stream().collect(Collectors.toMap(k -> k.topic(), v -> v));
 		signalsById = signals.stream().collect(Collectors.toMap(k -> k.id(), v -> v));
 		dataTypesById = dataTypes.stream().collect(Collectors.toMap(k -> k.id(), v -> v));
+		LOGGER.info("Initialized!");
 
 		return this;
 	}
 
 	public final void updateSignal(Signal signal) {
+		LOGGER.fine(() -> "Updating signal: " + signal);
 		var id = Long.valueOf(signal.id());
 		synchronized (signalsLock) {
 			var old = signalsById.get(id);
@@ -63,6 +70,7 @@ public final class SignalRepo {
 	}
 
 	public final boolean removeSignal(Signal signal) {
+		LOGGER.fine(() -> "Removing signal: " + signal);
 		var id = Long.valueOf(signal.id());
 		var isRemoved = false;
 		synchronized (signalsLock) {

@@ -7,17 +7,17 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import io.historizr.device.db.DataType;
 import io.historizr.device.db.Sample;
 
 public final class SampleRepo implements AutoCloseable {
+	private final static Logger LOGGER = Logger.getLogger(SampleRepo.class.getName());
 	private final Config cfg;
 	private final ExecutorService deferred = Executors.newSingleThreadExecutor();
 	private final ConcurrentHashMap<Long, Sample> samplesById = new ConcurrentHashMap<>();
@@ -29,19 +29,26 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	public final SampleRepo init(SignalRepo signalRepo) throws MqttException {
+		LOGGER.info("Initializing...");
 		this.signalRepo = Objects.requireNonNull(signalRepo);
 		var clientId = cfg.hasClientIdUuid() ? cfg.clientId() + '_' + UUID.randomUUID() : cfg.clientId();
+		LOGGER.info("MQTT client id: " + clientId);
 		client = new MqttClient(cfg.broker(), clientId);
+		LOGGER.info("Connecting to broker...");
 		client.connect();
+		LOGGER.info("Connected!");
+		LOGGER.info("Initialized!");
 		return this;
 	}
 
 	@Override
 	public final void close() throws Exception {
+		LOGGER.info("Closing...");
 		if (client != null) {
 			client.close();
 		}
 		deferred.shutdown();
+		LOGGER.info("Closed!");
 	}
 
 	private static record DeferredPublish(MqttClient client, String topic, MqttMessage message) implements Runnable {
@@ -68,6 +75,7 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	private final void handleMessage(String topic, MqttMessage msg) {
+		LOGGER.fine(() -> "Incoming message: " + msg);
 		var now = OffsetDateTime.now(ZoneOffset.UTC);
 		var signal = signalRepo.signalByTopic(topic);
 		if (signal == null) {
@@ -105,15 +113,10 @@ public final class SampleRepo implements AutoCloseable {
 			return;
 		}
 		// Encode and send via mqtt.
-		byte[] payload;
-		try {
-			payload = OpsJson.writer().writeValueAsBytes(sample);
-		} catch (JsonProcessingException e) {
-			// This should never happen.
-			throw new RuntimeException(e);
-		}
+		var payload = OpsJson.toBytes(sample);
 		var outMsg = new MqttMessage(payload);
 		var outTopic = cfg.outputTopic() + signal.name();
+		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
 		// Cant publish from the method that handles the subscription event.
 		deferred.execute(new DeferredPublish(client, outTopic, outMsg));
 	}

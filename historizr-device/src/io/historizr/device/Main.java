@@ -1,5 +1,7 @@
 package io.historizr.device;
 
+import java.util.logging.Logger;
+
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;
@@ -10,10 +12,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.ErrorHandler;
 
 public final class Main extends AbstractVerticle {
-
-//	private Main() {
-//		throw new RuntimeException();
-//	}
+	private final static Logger LOGGER = Logger.getLogger(Main.class.getName());
 
 	@Override
 	public final void start() throws Exception {
@@ -41,8 +40,7 @@ public final class Main extends AbstractVerticle {
 				// Start listening
 				.listen(cfg.apiPort())
 				// Print the port
-				.onSuccess(server -> System.out.println(
-						"HTTP server started on port " + server.actualPort()));
+				.onSuccess(server -> LOGGER.info("HTTP server started on port " + server.actualPort()));
 	}
 
 	public static void main(String[] args) {

@@ -19,6 +19,8 @@ public abstract class Sample {
 	public abstract boolean hasDifferentValue(Sample s);
 
 	public static final class OfBool extends Sample {
+		private static final String BOOL_TRUE = "1";
+		private static final String BOOL_FALSE = "0";
 		public final boolean value;
 
 		public OfBool(OffsetDateTime tstamp, boolean quality, boolean value) {
@@ -36,10 +38,10 @@ public abstract class Sample {
 			if (!OpsMisc.isNullOrEmpty(v)) {
 				if (v.length() == 1) {
 					// We reinterpret 0 and 1 as booleans.
-					if ("0".equals(v)) {
+					if (BOOL_FALSE.equals(v)) {
 						tmp = false;
 						isParsed = true;
-					} else if ("1".equals(v)) {
+					} else if (BOOL_TRUE.equals(v)) {
 						tmp = true;
 						isParsed = true;
 					}

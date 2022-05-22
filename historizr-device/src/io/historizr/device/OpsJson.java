@@ -1,5 +1,6 @@
 package io.historizr.device;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -21,5 +22,21 @@ public final class OpsJson {
 
 	public static final ObjectReader reader() {
 		return JSON.reader();
+	}
+
+	public static final String toString(Object o) {
+		try {
+			return JSON.writeValueAsString(o);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static final byte[] toBytes(Object o) {
+		try {
+			return JSON.writeValueAsBytes(o);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
