@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
+import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -131,18 +132,20 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	public final void subscribe() {
-		try {
-			client.subscribe(cfg.inputTopic(), this::handleMessage);
-		} catch (MqttException e) {
-			throw new RuntimeException(e);
-		}
+		subscribe(cfg.inputTopic(), this::handleMessage);
 	}
 
 	public final void debugOutput() {
+		subscribe(cfg.outputTopic() + '#', (topic, msg) -> {
+			LOGGER.info(topic + ": " + msg);
+		});
+	}
+
+	private final void subscribe(String topic, IMqttMessageListener handler) {
 		try {
-			client.subscribe(cfg.outputTopic() + '#', (topic, msg) -> {
-				System.out.println("%s: %s".formatted(topic, msg));
-			});
+			LOGGER.info("Subscribing to " + topic);
+			client.subscribe(topic, handler);
+			LOGGER.info("Subscribed!");
 		} catch (MqttException e) {
 			throw new RuntimeException(e);
 		}
