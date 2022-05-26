@@ -2,6 +2,7 @@ package io.historizr.device;
 
 import java.util.logging.Logger;
 
+import io.historizr.device.OpsMisc.PassthroughCodec;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;
@@ -18,17 +19,22 @@ public final class Main extends AbstractVerticle {
 	public final void start() throws Exception {
 		LOGGER.info("Starting...");
 		var cfg = Config.read();
-		// Db connection shared across handlers.
+		vertx.eventBus().registerCodec(PassthroughCodec.INSTANCE);
+		// Db connection shared across handlers.e
 		// Would be nice to have PRAGMA foreign_keys = ON;
 		LOGGER.info("Creating JDBC client...");
-		var jdbc = JDBCClient.createShared(vertx,
+		var jdbc = JDBCClient.create(vertx,
 				new JsonObject().put("url", cfg.db()));
 		LOGGER.info("Created!");
 		LOGGER.info("Deploying sample worker...");
-		vertx.deployVerticle(SampleWorker::new, new DeploymentOptions()
-				.setWorker(true)
-				.setConfig(cfg.toJson()));
-		LOGGER.info("Deployed!");
+		if (cfg.noSampling()) {
+			LOGGER.info("Sampling worker DISABLED");
+		} else {
+			vertx.deployVerticle(SampleWorker::new, new DeploymentOptions()
+					.setWorker(true)
+					.setConfig(cfg.toJson()));
+			LOGGER.info("Deployed!");
+		}
 		LOGGER.info("Configuring HTTP api...");
 		// Web router.
 		var router = Router.router(vertx);
@@ -42,13 +48,17 @@ public final class Main extends AbstractVerticle {
 		LOGGER.info("Configured!");
 		LOGGER.info("Creating HTTP server...");
 		// Create the HTTP server
-		vertx.createHttpServer()
-				// Handle every request using the router
-				.requestHandler(router)
-				// Start listening
-				.listen(cfg.apiPort())
-				// Print the port
-				.onSuccess(server -> LOGGER.info("HTTP server created on port " + server.actualPort() + "!"));
+		if (cfg.noHttpApi()) {
+			LOGGER.info("HTTP api DISABLED");
+		} else {
+			vertx.createHttpServer()
+					// Handle every request using the router
+					.requestHandler(router)
+					// Start listening
+					.listen(cfg.apiPort())
+					// Print the port
+					.onSuccess(server -> LOGGER.info("HTTP server created on port " + server.actualPort() + "!"));
+		}
 		LOGGER.info("Started!");
 	}
 

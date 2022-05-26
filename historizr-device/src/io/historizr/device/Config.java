@@ -15,7 +15,9 @@ public record Config(
 		String outputTopic,
 		int apiPort,
 		boolean hasClientIdUuid,
-		boolean hasDebugTopic) {
+		boolean hasDebugTopic,
+		boolean noHttpApi,
+		boolean noSampling) {
 	public Db toDb() {
 		return new Db(this);
 	}
