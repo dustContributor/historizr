@@ -20,11 +20,12 @@ public final class Main extends AbstractVerticle {
 		LOGGER.info("Starting...");
 		var cfg = Config.read();
 		vertx.eventBus().registerCodec(PassthroughCodec.INSTANCE);
-		// Db connection shared across handlers.e
-		// Would be nice to have PRAGMA foreign_keys = ON;
 		LOGGER.info("Creating JDBC client...");
-		var jdbc = JDBCClient.create(vertx,
-				new JsonObject().put("url", cfg.db()));
+		var jdbc = JDBCClient.createShared(vertx,
+				new JsonObject()
+						// Skip all the connection pooling stuff
+						.put("provider_class", SQLiteProvider.class.getName())
+						.put("cfg", cfg));
 		LOGGER.info("Created!");
 		LOGGER.info("Deploying sample worker...");
 		if (cfg.noSampling()) {
