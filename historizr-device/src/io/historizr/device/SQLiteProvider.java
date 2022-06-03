@@ -19,18 +19,17 @@ public final class SQLiteProvider implements DataSourceProvider {
 		return 1;
 	}
 
-	private static final SQLiteConfig DEFAULT_CONFIG;
-	static {
+	private static final SQLiteConfig defaultConfig() {
 		var tmp = new SQLiteConfig();
 		// Very important to avoid trash data in the signal table.
 		tmp.enforceForeignKeys(true);
-		DEFAULT_CONFIG = tmp;
+		return tmp;
 	}
 
 	@Override
 	public final DataSource getDataSource(JsonObject config) throws SQLException {
 		var cfg = (Config) config.getValue("cfg");
-		var dataSource = new SQLiteDataSource(DEFAULT_CONFIG);
+		var dataSource = new SQLiteDataSource(defaultConfig());
 		dataSource.setUrl(cfg.db());
 		return dataSource;
 	}
