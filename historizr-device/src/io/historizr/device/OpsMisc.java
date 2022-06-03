@@ -64,6 +64,7 @@ public final class OpsMisc {
 
 	private static final DeliveryOptions JSON_DELIVERY = new DeliveryOptions()
 			.setCodecName(PassthroughCodec.INSTANCE.name())
+			.setLocalOnly(true)
 			.setTracingPolicy(TracingPolicy.IGNORE);
 
 	public static final EventBus sendJson(EventBus bus, String address, Object obj) {
