@@ -1,6 +1,6 @@
 package io.historizr.device.api;
 
-import static io.historizr.device.OpsMisc.hasFailed;
+import static io.historizr.device.OpsReq.failed;
 
 import io.historizr.device.db.Db;
 import io.vertx.core.eventbus.EventBus;
@@ -18,7 +18,7 @@ public class DataType {
 		router.get(ROUTE)
 				.handler(ctx -> {
 					conn.query(Db.Sql.QUERY_DATA_TYPE, r -> {
-						if (hasFailed(r, ctx)) {
+						if (failed(r, ctx)) {
 							return;
 						}
 						var res = r.result();

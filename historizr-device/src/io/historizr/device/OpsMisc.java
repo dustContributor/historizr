@@ -1,13 +1,11 @@
 package io.historizr.device;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.tracing.TracingPolicy;
-import io.vertx.ext.web.RoutingContext;
 
 public final class OpsMisc {
 	private OpsMisc() {
@@ -16,14 +14,6 @@ public final class OpsMisc {
 
 	public static boolean isNullOrEmpty(String v) {
 		return v == null || v.isEmpty();
-	}
-
-	public static final boolean hasFailed(AsyncResult<?> res, RoutingContext ctx) {
-		if (res.succeeded()) {
-			return false;
-		}
-		ctx.fail(res.cause());
-		return true;
 	}
 
 	/**

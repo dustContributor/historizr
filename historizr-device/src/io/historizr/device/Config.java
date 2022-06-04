@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
-import io.historizr.device.db.Db;
 import io.vertx.core.json.JsonObject;
 
 public record Config(
@@ -18,10 +17,6 @@ public record Config(
 		boolean hasDebugTopic,
 		boolean noHttpApi,
 		boolean noSampling) {
-	public Db toDb() {
-		return new Db(this);
-	}
-
 	public final JsonObject toJson() {
 		return JsonObject.mapFrom(this);
 	}

@@ -1,7 +1,8 @@
 package io.historizr.device.api;
 
-import static io.historizr.device.OpsMisc.hasFailed;
 import static io.historizr.device.OpsMisc.sendJson;
+import static io.historizr.device.OpsReq.failed;
+import static io.historizr.device.OpsReq.notFound;
 
 import java.util.logging.Logger;
 
@@ -30,7 +31,7 @@ public final class Signal {
 		router.get(ROUTE)
 				.handler(ctx -> {
 					conn.query(Db.Sql.QUERY_SIGNAL, r -> {
-						if (hasFailed(r, ctx)) {
+						if (failed(r, ctx)) {
 							return;
 						}
 						var rs = r.result();
@@ -40,14 +41,9 @@ public final class Signal {
 		router.post(ROUTE)
 				.handler(ctx -> {
 					var entity = ctx.body().asPojo(signalModel);
-					var pars = new JsonArray()
-							.add(entity.id())
-							.add(entity.dataTypeId())
-							.add(entity.name())
-							.add(entity.topic())
-							.add(entity.isOnChange());
+					var pars = entity.into(new JsonArray());
 					conn.queryWithParams(Db.Sql.INSERT_SIGNAL, pars, r -> {
-						if (hasFailed(r, ctx)) {
+						if (failed(r, ctx)) {
 							return;
 						}
 						var res = r.result().getRows().get(0);
@@ -59,17 +55,16 @@ public final class Signal {
 		router.put(ROUTE)
 				.handler(ctx -> {
 					var entity = ctx.body().asPojo(signalModel);
-					var pars = new JsonArray()
-							.add(entity.dataTypeId())
-							.add(entity.name())
-							.add(entity.topic())
-							.add(entity.isOnChange())
-							.add(entity.id());
+					var pars = entity.into(new JsonArray(), true);
 					conn.queryWithParams(Db.Sql.UPDATE_SIGNAL, pars, r -> {
-						if (hasFailed(r, ctx)) {
+						if (failed(r, ctx)) {
 							return;
 						}
-						var res = r.result().getRows().get(0);
+						var rows = r.result().getRows();
+						if (notFound(rows.size(), ctx)) {
+							return;
+						}
+						var res = rows.get(0);
 						LOGGER.fine(() -> "PUT " + res);
 						sendJson(bus, EVENT_UPDATED, res);
 						ctx.json(res);
@@ -80,12 +75,12 @@ public final class Signal {
 					var id = ctx.queryParam("id");
 					var pars = new JsonArray(id);
 					conn.updateWithParams(Db.Sql.DELETE_SIGNAL, pars, r -> {
-						if (hasFailed(r, ctx)) {
+						if (failed(r, ctx)) {
 							return;
 						}
 						var res = r.result();
 						if (res.getUpdated() > 0) {
-							var entity = new io.historizr.device.db.Signal(pars.getLong(0), 0, null, null, false);
+							var entity = io.historizr.device.db.Signal.empty(pars.getLong(0));
 							sendJson(bus, EVENT_DELETED, entity);
 						}
 						LOGGER.fine(() -> "DELETE " + OpsJson.toString(res));

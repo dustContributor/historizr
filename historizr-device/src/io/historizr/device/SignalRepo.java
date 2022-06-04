@@ -1,5 +1,6 @@
 package io.historizr.device;
 
+import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
@@ -27,10 +28,9 @@ public final class SignalRepo {
 		var signals = new ArrayList<Signal>();
 		var dataTypes = new ArrayList<DataType>();
 		LOGGER.info("Querying data...");
-		try (var db = cfg.toDb();
-				var conn = db.connect().conn();
-				var sSt = db.prepare(Db.Sql.QUERY_SIGNAL);
-				var dtSt = db.prepare(Db.Sql.QUERY_DATA_TYPE);) {
+		try (var db = DriverManager.getConnection(cfg.db());
+				var sSt = db.prepareStatement(Db.Sql.QUERY_SIGNAL);
+				var dtSt = db.prepareStatement(Db.Sql.QUERY_DATA_TYPE);) {
 			var sRs = sSt.executeQuery();
 			while (sRs.next()) {
 				var row = Signal.of(sRs);
