@@ -1,9 +1,12 @@
 import { Client } from 'https://deno.land/x/mqtt@0.1.2/deno/mod.ts';
 import * as utils from './utils.js'
+import * as log from './log.js'
 import { CFG } from './config.js'
 
 const readAt = v => Deno.readTextFileSync(v).trim();
 const readDirAt = v => Deno.readDirSync(utils.dirPathOf(v));
+
+log.info('Initializing capturing methods...')
 
 // CPU frequency //
 
@@ -94,20 +97,23 @@ for (const hwmon of readDirAt(baseHwmon)) {
     }
   }
 }
+log.info('Initialized!')
 
+
+log.info('Connecting to broker...')
 const client = new Client({
   clientId: CFG.mqttClientId,
   url: CFG.brokerUrl,
   clean: CFG.cleanSession
 })
 await client.connect()
-console.log('Connected!')
+log.info('Connected!')
 
 const pubOpts = {
   retain: CFG.retainMessage,
   qos: CFG.qualityOfService
 };
-const destTopic = utils.dirPathOf(CFG.destTopic)
+const destTopic = utils.separatorEnd(CFG.destTopic)
 
 const publishSimple = async arr => {
   for (const entry of arr) {
@@ -125,13 +131,15 @@ const publishMemInfo = async () => {
     await client.publish(`${destTopic}${name}`, value, pubOpts)
   }
 }
+
 setInterval(async () => {
   await publishSimple(hwmonEntries)
   await publishSimple(cpus)
   await publishMemInfo()
+  log.info('Published!')
 }, CFG.intervalSeconds * 1000)
+log.info('Publishing...')
 
-console.log('Publishing...')
 // const decoder = new TextDecoder();
 // let msgCount = 0
 // client.on('message', (topic, payload) => {

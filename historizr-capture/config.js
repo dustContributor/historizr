@@ -5,7 +5,7 @@ export const CFG = Object.freeze({
   brokerUrl: 'mqtt://localhost:1883',
   intervalSeconds: 10,
   mqttClientId: 'historizr-capture',
-  destTopic: '/input/',
+  destTopic: 'input/',
   retainMessage: false,
   cleanSession: true,
   qualityOfService: 1
