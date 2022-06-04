@@ -16,6 +16,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import io.historizr.device.db.DataType;
 import io.historizr.device.db.Sample;
+import io.historizr.device.db.Signal;
 
 public final class SampleRepo implements AutoCloseable {
 	private final static Logger LOGGER = Logger.getLogger(SampleRepo.class.getName());
@@ -75,6 +76,32 @@ public final class SampleRepo implements AutoCloseable {
 		};
 	}
 
+	private static final Sample evaluateChange(Signal signal, Sample current, Sample previous) {
+		if (previous == null) {
+			// No previous sample registered, update.
+			return current;
+		}
+		if (previous.tstamp.compareTo(current.tstamp) > 0) {
+			// Somehow we got an older sample, don't update.
+			return previous;
+		}
+		if (signal.deadband() > 0) {
+			// Deadband configured for this signal.
+			var deadband = Sample.toDeadband(signal.deadband());
+			if (!previous.exceedsDeadband(current, deadband)) {
+				// Value within the deadband, don't update.
+				return previous;
+			}
+		} else if (signal.isOnChange()) {
+			// Signal only emits if it changed.
+			if (!previous.hasDifferentValue(current)) {
+				// Sample didn't change, don't update.
+				return previous;
+			}
+		}
+		return current;
+	}
+
 	private final void handleMessage(String topic, MqttMessage msg) {
 		LOGGER.fine(() -> "Incoming message:topic: " + msg + ":" + topic);
 		var now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -99,20 +126,7 @@ public final class SampleRepo implements AutoCloseable {
 			return;
 		}
 		var oid = Long.valueOf(signal.id());
-		var changed = samplesById.compute(oid, (key, existing) -> {
-			if (existing != null) {
-				if (signal.isOnChange() && !existing.hasDifferentValue(sample)) {
-					// Signal only emits values on change and it's the same.
-					return existing;
-				}
-				if (existing.tstamp.compareTo(sample.tstamp) > 0) {
-					// Somehow we got an older sample, dont update.
-					return existing;
-				}
-			}
-			// Passed the check so just update it.
-			return sample;
-		});
+		var changed = samplesById.compute(oid, (key, existing) -> evaluateChange(signal, sample, existing));
 		if (sample != changed) {
 			// Existing sample didn't get updated, wont emit.
 			return;

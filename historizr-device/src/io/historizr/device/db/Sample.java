@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import io.historizr.device.OpsMisc;
 
-public abstract class Sample {
+public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample.OfFloat, Sample.OfDouble, Sample.OfString {
 
 	public final OffsetDateTime tstamp;
 	public final boolean quality;
@@ -16,11 +16,45 @@ public abstract class Sample {
 		this.quality = quality;
 	}
 
+	public static final double DEADBAND_SCALE = 1.0 / 1000.0;
+
+	public static final double toDeadband(double v) {
+		return v * DEADBAND_SCALE;
+	}
+
+	public static final boolean exceeds(double refValue, double newValue, double deadband) {
+		if (refValue == newValue) {
+			return false;
+		}
+		if (Double.isNaN(refValue)) {
+			// If the new value isn't a NaN, accept without comparing.
+			return !Double.isNaN(newValue);
+		}
+		if (Double.isInfinite(refValue)) {
+			if (Double.isInfinite(newValue)) {
+				// Only accept if the infinites are of different sign.
+				return refValue != newValue;
+			}
+			// If new value is finite, accept without comparing.
+			return true;
+		}
+		var a = refValue * -deadband + refValue;
+		var b = refValue * deadband + refValue;
+		// Swap if necessary, ref value could be negative.
+		var min = Math.min(a, b);
+		var max = Math.max(a, b);
+		return newValue < min || newValue > max;
+	}
+
+	public abstract boolean exceedsDeadband(Sample s, double deadband);
+
 	public abstract boolean hasDifferentValue(Sample s);
 
 	public static final class OfBool extends Sample {
-		private static final String BOOL_TRUE = "1";
-		private static final String BOOL_FALSE = "0";
+		private static final String BOOL_NUM_FALSE = "0";
+		private static final String BOOL_NUM_TRUE = "1";
+		private static final String BOOL_LBL_FALSE = "false";
+		private static final String BOOL_LBL_TRUE = "true";
 		public final boolean value;
 
 		public OfBool(OffsetDateTime tstamp, boolean quality, boolean value) {
@@ -34,34 +68,36 @@ public abstract class Sample {
 
 		public static OfBool of(String v, OffsetDateTime t, boolean q) {
 			var isParsed = false;
-			var tmp = false;
-			if (!OpsMisc.isNullOrEmpty(v)) {
-				if (v.length() == 1) {
-					// We reinterpret 0 and 1 as booleans.
-					if (BOOL_FALSE.equals(v)) {
-						tmp = false;
-						isParsed = true;
-					} else if (BOOL_TRUE.equals(v)) {
-						tmp = true;
-						isParsed = true;
-					}
-				}
-				if (!isParsed) {
-					// Otherwise just test for true/false string.
-					try {
-						tmp = Boolean.parseBoolean(v);
-						isParsed = true;
-					} catch (NumberFormatException e) {
-						// Skip.
-					}
-				}
+			var value = false;
+			switch (v) {
+			case BOOL_NUM_FALSE:
+				value = false;
+				isParsed = true;
+				break;
+			case BOOL_NUM_TRUE:
+				value = true;
+				isParsed = true;
+				break;
+			case BOOL_LBL_FALSE:
+				value = false;
+				isParsed = true;
+				break;
+			case BOOL_LBL_TRUE:
+				value = true;
+				isParsed = true;
+				break;
 			}
-			return new OfBool(t, isParsed, tmp);
+			return new OfBool(t, isParsed, value);
 		}
 
 		@Override
 		public final boolean hasDifferentValue(Sample s) {
 			return s instanceof OfBool v ? v.value != this.value : true;
+		}
+
+		@Override
+		public final boolean exceedsDeadband(Sample s, double deadband) {
+			return hasDifferentValue(s);
 		}
 	}
 
@@ -93,6 +129,11 @@ public abstract class Sample {
 		public final boolean hasDifferentValue(Sample s) {
 			return s instanceof OfFloat v ? v.value != this.value : true;
 		}
+
+		@Override
+		public final boolean exceedsDeadband(Sample s, double deadband) {
+			return s instanceof OfFloat v ? Sample.exceeds(value, v.value, deadband) : true;
+		}
 	}
 
 	public static final class OfDouble extends Sample {
@@ -122,6 +163,11 @@ public abstract class Sample {
 		@Override
 		public final boolean hasDifferentValue(Sample s) {
 			return s instanceof OfDouble v ? v.value != this.value : true;
+		}
+
+		@Override
+		public final boolean exceedsDeadband(Sample s, double deadband) {
+			return s instanceof OfDouble v ? Sample.exceeds(value, v.value, deadband) : true;
 		}
 	}
 
@@ -154,6 +200,11 @@ public abstract class Sample {
 		public final boolean hasDifferentValue(Sample s) {
 			return s instanceof OfLong v ? v.value != this.value : true;
 		}
+
+		@Override
+		public final boolean exceedsDeadband(Sample s, double deadband) {
+			return s instanceof OfLong v ? Sample.exceeds(value, v.value, deadband) : true;
+		}
 	}
 
 	public static final class OfString extends Sample {
@@ -176,6 +227,11 @@ public abstract class Sample {
 		@Override
 		public final boolean hasDifferentValue(Sample s) {
 			return s instanceof OfString v ? !Objects.equals(v.value, this.value) : true;
+		}
+
+		@Override
+		public final boolean exceedsDeadband(Sample s, double deadband) {
+			return hasDifferentValue(s);
 		}
 	}
 }
