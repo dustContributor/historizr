@@ -24,20 +24,18 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 
 	public static final boolean exceeds(double refValue, double newValue, double deadband) {
 		if (refValue == newValue) {
+			// Values are either finite and equal, or the same infinite signs.
 			return false;
 		}
 		if (Double.isNaN(refValue)) {
-			// If the new value isn't a NaN, accept without comparing.
+			// If the new value isn't a NaN, accept it.
 			return !Double.isNaN(newValue);
 		}
 		if (Double.isInfinite(refValue)) {
-			if (Double.isInfinite(newValue)) {
-				// Only accept if the infinites are of different sign.
-				return refValue != newValue;
-			}
-			// If new value is finite, accept without comparing.
+			// At this point the new value is either finite, or a different infinity.
 			return true;
 		}
+		// Both values are finite, compare them.
 		var a = refValue * -deadband + refValue;
 		var b = refValue * deadband + refValue;
 		// Swap if necessary, ref value could be negative.
