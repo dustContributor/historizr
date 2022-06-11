@@ -32,6 +32,14 @@ public final class OpsJson {
 		}
 	}
 
+	public static final <T> T fromString(String o, Class<T> t) {
+		try {
+			return JSON.readValue(o, t);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public static final byte[] toBytes(Object o) {
 		try {
 			return JSON.writeValueAsBytes(o);

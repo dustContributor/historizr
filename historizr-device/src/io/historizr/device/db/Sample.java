@@ -3,6 +3,9 @@ package io.historizr.device.db;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.historizr.device.OpsMisc;
 
 public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample.OfFloat, Sample.OfDouble, Sample.OfString {
@@ -55,7 +58,9 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		private static final String BOOL_LBL_TRUE = "true";
 		public final boolean value;
 
-		public OfBool(OffsetDateTime tstamp, boolean quality, boolean value) {
+		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+		public OfBool(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
+				@JsonProperty("v") boolean value) {
 			super(tstamp, quality);
 			this.value = value;
 		}
@@ -102,7 +107,9 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	public static final class OfFloat extends Sample {
 		public final float value;
 
-		public OfFloat(OffsetDateTime tstamp, boolean quality, float value) {
+		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+		public OfFloat(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
+				@JsonProperty("v") float value) {
 			super(tstamp, quality);
 			this.value = value;
 		}
@@ -137,7 +144,9 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	public static final class OfDouble extends Sample {
 		public final double value;
 
-		public OfDouble(OffsetDateTime tstamp, boolean quality, double value) {
+		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+		public OfDouble(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
+				@JsonProperty("v") double value) {
 			super(tstamp, quality);
 			this.value = value;
 		}
@@ -172,7 +181,9 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	public static final class OfLong extends Sample {
 		public final long value;
 
-		public OfLong(OffsetDateTime tstamp, boolean quality, long value) {
+		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+		public OfLong(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
+				@JsonProperty("v") long value) {
 			super(tstamp, quality);
 			this.value = value;
 		}
@@ -208,7 +219,9 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	public static final class OfString extends Sample {
 		public final String value;
 
-		public OfString(OffsetDateTime tstamp, boolean quality, String value) {
+		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+		public OfString(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
+				@JsonProperty("v") String value) {
 			super(tstamp, quality);
 			this.value = value;
 		}

@@ -16,7 +16,8 @@ public final class Db {
 					name,
 					topic,
 					deadband,
-					is_on_change as isOnChange
+					is_on_change as isOnChange,
+					has_full_payload as hasFullPayload
 				""".stripIndent();
 		public static final String QUERY_DATA_TYPE = """
 				select id, id_mapping as mappingId, name from data_type""".stripIndent();

@@ -25,6 +25,9 @@ public final class SampleRepo implements AutoCloseable {
 	private final ConcurrentHashMap<Long, Sample> samplesById = new ConcurrentHashMap<>();
 	private MqttClient client;
 	private SignalRepo signalRepo;
+	private long receivedCount;
+	private long processedCount;
+	private long skippedCount;
 
 	public SampleRepo(Config cfg) {
 		this.cfg = Objects.requireNonNull(cfg);
@@ -64,14 +67,39 @@ public final class SampleRepo implements AutoCloseable {
 		}
 	}
 
-	private static final Sample sampleOf(DataType.Catalog dataType, MqttMessage msg, OffsetDateTime now) {
+	private static final Sample sampleOf(DataType.Catalog dataType, MqttMessage msg, OffsetDateTime now,
+			boolean hasFullPayload) {
+		if (dataType == null || dataType == DataType.Catalog.UNKNOWN) {
+			// Avoid parsing payload if the type is unknown.
+			return null;
+		}
+		var payload = msg.toString();
+		return hasFullPayload ? fullPayload(dataType, payload) : simplePayload(dataType, payload, now);
+	}
+
+	private static final Sample fullPayload(DataType.Catalog dataType, String payload) {
+		var type = switch (dataType) {
+		case BOOL -> Sample.OfBool.class;
+		case F32 -> Sample.OfFloat.class;
+		case F64 -> Sample.OfDouble.class;
+		case I64 -> Sample.OfLong.class;
+		case STR -> Sample.OfString.class;
+		default -> null;
+		};
+		try {
+			return OpsJson.fromString(payload, type);
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+
+	private static final Sample simplePayload(DataType.Catalog dataType, String payload, OffsetDateTime now) {
 		return switch (dataType) {
-		case BOOL -> Sample.OfBool.of(msg.toString(), now);
-		case F32 -> Sample.OfFloat.of(msg.toString(), now);
-		case F64 -> Sample.OfDouble.of(msg.toString(), now);
-		case I64 -> Sample.OfLong.of(msg.toString(), now);
-		case STR -> Sample.OfString.of(msg.toString(), now);
-		// Late call msg.toString to avoid parsing payload if the type is unknown.
+		case BOOL -> Sample.OfBool.of(payload, now);
+		case F32 -> Sample.OfFloat.of(payload, now);
+		case F64 -> Sample.OfDouble.of(payload, now);
+		case I64 -> Sample.OfLong.of(payload, now);
+		case STR -> Sample.OfString.of(payload, now);
 		default -> null;
 		};
 	}
@@ -103,6 +131,7 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	private final void handleMessage(String topic, MqttMessage msg) {
+		receivedCount = receivedCount() + 1;
 		LOGGER.fine(() -> "Incoming message:topic: " + msg + ":" + topic);
 		var now = OffsetDateTime.now(ZoneOffset.UTC);
 		var signal = signalRepo.signalByTopic(topic);
@@ -118,17 +147,19 @@ public final class SampleRepo implements AutoCloseable {
 			return;
 		}
 		var mappedType = DataType.Catalog.of(dataType.mappingId());
-		var sample = sampleOf(mappedType, msg, now);
+		var sample = sampleOf(mappedType, msg, now, signal.hasFullPayload());
 		if (sample == null) {
 			LOGGER.warning(() -> "Unrecognized mapped data type for signal: " + signal + ", mapped to: "
 					+ dataType);
 			// Unrecognized mapped data type. Shouldn't happen.
 			return;
 		}
+		processedCount = processedCount() + 1;
 		var oid = Long.valueOf(signal.id());
 		var changed = samplesById.compute(oid, (key, existing) -> evaluateChange(signal, sample, existing));
 		if (sample != changed) {
 			// Existing sample didn't get updated, wont emit.
+			skippedCount = skippedCount() + 1;
 			return;
 		}
 		// Encode and send via mqtt.
@@ -163,5 +194,17 @@ public final class SampleRepo implements AutoCloseable {
 		} catch (MqttException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public final long receivedCount() {
+		return receivedCount;
+	}
+
+	public final long processedCount() {
+		return processedCount;
+	}
+
+	public final long skippedCount() {
+		return skippedCount;
 	}
 }
