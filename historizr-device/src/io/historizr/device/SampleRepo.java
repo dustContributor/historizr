@@ -5,8 +5,6 @@ import java.time.ZoneOffset;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -17,11 +15,13 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import io.historizr.device.db.DataType;
 import io.historizr.device.db.Sample;
 import io.historizr.device.db.Signal;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 
 public final class SampleRepo implements AutoCloseable {
 	private final static Logger LOGGER = Logger.getLogger(SampleRepo.class.getName());
 	private final Config cfg;
-	private final ExecutorService deferred = Executors.newSingleThreadExecutor();
+	private final Vertx vertx;
 	private final ConcurrentHashMap<Long, Sample> samplesById = new ConcurrentHashMap<>();
 	private MqttClient client;
 	private SignalRepo signalRepo;
@@ -29,14 +29,15 @@ public final class SampleRepo implements AutoCloseable {
 	private long processedCount;
 	private long skippedCount;
 
-	public SampleRepo(Config cfg) {
+	public SampleRepo(Config cfg, Vertx vertx) {
 		this.cfg = Objects.requireNonNull(cfg);
+		this.vertx = Objects.requireNonNull(vertx);
 	}
 
 	public final SampleRepo init(SignalRepo signalRepo) throws MqttException {
 		LOGGER.info("Initializing...");
 		this.signalRepo = Objects.requireNonNull(signalRepo);
-		var clientId = cfg.hasClientIdUuid() ? cfg.clientId() + '_' + UUID.randomUUID() : cfg.clientId();
+		var clientId = makeClientId();
 		LOGGER.info("MQTT client id: " + clientId);
 		client = new MqttClient(cfg.broker(), clientId);
 		LOGGER.info("Connecting to broker...");
@@ -46,19 +47,23 @@ public final class SampleRepo implements AutoCloseable {
 		return this;
 	}
 
+	private final String makeClientId() {
+		return cfg.hasClientIdUuid() ? cfg.clientId() + '_' + UUID.randomUUID() : cfg.clientId();
+	}
+
 	@Override
 	public final void close() throws Exception {
 		LOGGER.info("Closing...");
 		if (client != null) {
 			client.close();
 		}
-		deferred.shutdown();
 		LOGGER.info("Closed!");
 	}
 
-	private static record DeferredPublish(MqttClient client, String topic, MqttMessage message) implements Runnable {
+	private static record DeferredPublish(MqttClient client, String topic, MqttMessage message)
+			implements Handler<Void> {
 		@Override
-		public final void run() {
+		public final void handle(Void event) {
 			try {
 				client.publish(topic, message);
 			} catch (MqttException e) {
@@ -168,7 +173,7 @@ public final class SampleRepo implements AutoCloseable {
 		var outTopic = cfg.outputTopic() + signal.name();
 		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
 		// Cant publish from the method that handles the subscription event.
-		deferred.execute(new DeferredPublish(client, outTopic, outMsg));
+		vertx.runOnContext(new DeferredPublish(client, outTopic, outMsg));
 	}
 
 	public final void removeSample(long id) {

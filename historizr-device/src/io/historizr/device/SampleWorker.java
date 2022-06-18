@@ -32,7 +32,7 @@ public final class SampleWorker extends AbstractVerticle {
 		var cfg = this.config().mapTo(Config.class);
 		this.signalRepo = new SignalRepo(cfg);
 		signalRepo.init();
-		this.sampleRepo = new SampleRepo(cfg);
+		this.sampleRepo = new SampleRepo(cfg, vertx);
 		sampleRepo.init(signalRepo);
 		if (cfg.hasDebugTopic()) {
 			sampleRepo.debugOutput();
