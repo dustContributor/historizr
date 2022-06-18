@@ -112,7 +112,7 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		}
 
 		@Override
-		public Sample withId(long id) {
+		public final Sample withId(long id) {
 			return new OfBool(id, tstamp, quality, value);
 		}
 	}
@@ -158,7 +158,7 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		}
 
 		@Override
-		public Sample withId(long id) {
+		public final Sample withId(long id) {
 			return new OfFloat(id, tstamp, quality, value);
 		}
 	}
@@ -204,7 +204,7 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		}
 
 		@Override
-		public Sample withId(long id) {
+		public final Sample withId(long id) {
 			return new OfDouble(id, tstamp, quality, value);
 		}
 	}
@@ -251,7 +251,7 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		}
 
 		@Override
-		public Sample withId(long id) {
+		public final Sample withId(long id) {
 			return new OfLong(id, tstamp, quality, value);
 		}
 	}
@@ -290,7 +290,7 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		}
 
 		@Override
-		public Sample withId(long id) {
+		public final Sample withId(long id) {
 			return new OfString(id, tstamp, quality, value);
 		}
 	}
