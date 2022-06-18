@@ -9,12 +9,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.historizr.device.OpsMisc;
 
 public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample.OfFloat, Sample.OfDouble, Sample.OfString {
-
+	public final long id;
 	public final OffsetDateTime tstamp;
 	public final boolean quality;
 
-	Sample(OffsetDateTime tstamp, boolean quality) {
+	Sample(long id, OffsetDateTime tstamp, boolean quality) {
 		super();
+		this.id = id;
 		this.tstamp = Objects.requireNonNull(tstamp);
 		this.quality = quality;
 	}
@@ -47,22 +48,29 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		return newValue < min || newValue > max;
 	}
 
+	public abstract Sample withId(long id);
+
 	public abstract boolean exceedsDeadband(Sample s, double deadband);
 
 	public abstract boolean hasDifferentValue(Sample s);
 
 	public static final class OfBool extends Sample {
+
 		private static final String BOOL_NUM_FALSE = "0";
 		private static final String BOOL_NUM_TRUE = "1";
 		private static final String BOOL_LBL_FALSE = "false";
 		private static final String BOOL_LBL_TRUE = "true";
 		public final boolean value;
 
+		public OfBool(long id, OffsetDateTime tstamp, boolean quality, boolean value) {
+			super(id, tstamp, quality);
+			this.value = value;
+		}
+
 		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
 		public OfBool(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
 				@JsonProperty("v") boolean value) {
-			super(tstamp, quality);
-			this.value = value;
+			this(0, tstamp, quality, value);
 		}
 
 		public static OfBool of(String v, OffsetDateTime t) {
@@ -102,16 +110,25 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		public final boolean exceedsDeadband(Sample s, double deadband) {
 			return hasDifferentValue(s);
 		}
+
+		@Override
+		public Sample withId(long id) {
+			return new OfBool(id, tstamp, quality, value);
+		}
 	}
 
 	public static final class OfFloat extends Sample {
 		public final float value;
 
+		public OfFloat(long id, OffsetDateTime tstamp, boolean quality, float value) {
+			super(id, tstamp, quality);
+			this.value = value;
+		}
+
 		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
 		public OfFloat(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
 				@JsonProperty("v") float value) {
-			super(tstamp, quality);
-			this.value = value;
+			this(0, tstamp, quality, value);
 		}
 
 		public static OfFloat of(String v, OffsetDateTime t) {
@@ -139,16 +156,25 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		public final boolean exceedsDeadband(Sample s, double deadband) {
 			return s instanceof OfFloat v ? Sample.exceeds(value, v.value, deadband) : true;
 		}
+
+		@Override
+		public Sample withId(long id) {
+			return new OfFloat(id, tstamp, quality, value);
+		}
 	}
 
 	public static final class OfDouble extends Sample {
 		public final double value;
 
+		public OfDouble(long id, OffsetDateTime tstamp, boolean quality, double value) {
+			super(id, tstamp, quality);
+			this.value = value;
+		}
+
 		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
 		public OfDouble(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
 				@JsonProperty("v") double value) {
-			super(tstamp, quality);
-			this.value = value;
+			this(0, tstamp, quality, value);
 		}
 
 		public static OfDouble of(String v, OffsetDateTime t) {
@@ -176,16 +202,25 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		public final boolean exceedsDeadband(Sample s, double deadband) {
 			return s instanceof OfDouble v ? Sample.exceeds(value, v.value, deadband) : true;
 		}
+
+		@Override
+		public Sample withId(long id) {
+			return new OfDouble(id, tstamp, quality, value);
+		}
 	}
 
 	public static final class OfLong extends Sample {
 		public final long value;
 
+		public OfLong(long id, OffsetDateTime tstamp, boolean quality, long value) {
+			super(id, tstamp, quality);
+			this.value = value;
+		}
+
 		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
 		public OfLong(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
 				@JsonProperty("v") long value) {
-			super(tstamp, quality);
-			this.value = value;
+			this(0, tstamp, quality, value);
 		}
 
 		public static OfLong of(String v, OffsetDateTime t) {
@@ -214,16 +249,25 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		public final boolean exceedsDeadband(Sample s, double deadband) {
 			return s instanceof OfLong v ? Sample.exceeds(value, v.value, deadband) : true;
 		}
+
+		@Override
+		public Sample withId(long id) {
+			return new OfLong(id, tstamp, quality, value);
+		}
 	}
 
 	public static final class OfString extends Sample {
 		public final String value;
 
+		public OfString(long id, OffsetDateTime tstamp, boolean quality, String value) {
+			super(id, tstamp, quality);
+			this.value = value;
+		}
+
 		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
 		public OfString(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
 				@JsonProperty("v") String value) {
-			super(tstamp, quality);
-			this.value = value;
+			this(0, tstamp, quality, value);
 		}
 
 		public static OfString of(String v, OffsetDateTime t) {
@@ -243,6 +287,11 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		@Override
 		public final boolean exceedsDeadband(Sample s, double deadband) {
 			return hasDifferentValue(s);
+		}
+
+		@Override
+		public Sample withId(long id) {
+			return new OfString(id, tstamp, quality, value);
 		}
 	}
 }

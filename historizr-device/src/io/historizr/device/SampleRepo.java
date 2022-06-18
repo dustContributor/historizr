@@ -78,11 +78,11 @@ public final class SampleRepo implements AutoCloseable {
 			// Avoid parsing payload if the type is unknown.
 			return null;
 		}
-		var payload = msg.toString();
-		return hasFullPayload ? fullPayload(dataType, payload) : simplePayload(dataType, payload, now);
+		return hasFullPayload ? fullPayload(dataType, msg.getPayload())
+				: simplePayload(dataType, msg.toString(), now);
 	}
 
-	private static final Sample fullPayload(DataType.Catalog dataType, String payload) {
+	private static final Sample fullPayload(DataType.Catalog dataType, byte[] payload) {
 		var type = switch (dataType) {
 		case BOOL -> Sample.OfBool.class;
 		case F32 -> Sample.OfFloat.class;
@@ -92,7 +92,7 @@ public final class SampleRepo implements AutoCloseable {
 		default -> null;
 		};
 		try {
-			return OpsJson.fromString(payload, type);
+			return OpsJson.fromBytes(payload, type);
 		} catch (Exception ex) {
 			return null;
 		}
@@ -168,7 +168,7 @@ public final class SampleRepo implements AutoCloseable {
 			return;
 		}
 		// Encode and send via mqtt.
-		var payload = OpsJson.toBytes(sample);
+		var payload = OpsJson.toBytes(sample.withId(signal.id()));
 		var outMsg = new MqttMessage(payload);
 		var outTopic = cfg.outputTopic() + signal.name();
 		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
