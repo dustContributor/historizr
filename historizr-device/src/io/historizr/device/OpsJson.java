@@ -1,10 +1,13 @@
 package io.historizr.device;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public final class OpsJson {
@@ -40,11 +43,23 @@ public final class OpsJson {
 		}
 	}
 
+	public static final <T> T fromBytes(byte[] o, Class<T> t) {
+		try {
+			return JSON.readValue(o, t);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public static final byte[] toBytes(Object o) {
 		try {
 			return JSON.writeValueAsBytes(o);
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public static final ObjectNode toObjectNode(Object o) {
+		return JSON.convertValue(o, ObjectNode.class);
 	}
 }
