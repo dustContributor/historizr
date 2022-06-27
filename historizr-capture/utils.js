@@ -72,3 +72,17 @@ export const isEmpty = v => {
 export const dirPathOf = v => {
   return `/${trimSeparator(v)}/`;
 }
+
+export const sanitizeMemName = v => {
+  const str = v.slice(0, -1)
+    // Turn any series of upper case letters into PascalCase
+    .replaceAll(/[A-Z]{2,}/g, s => `${s[0]}${s.substring(1).toLowerCase()}`)
+    .replaceAll('_', '')
+    .replaceAll(')', '')
+    .replaceAll('(', '_')
+    // This will capture 2M 4M etc
+    .replaceAll(/\d[A-Z]/g, s => s.toLowerCase())
+    .replaceAll(/[A-Z]/g, '_$&')
+    .toLowerCase()
+  return trimChar(str, '_')
+}

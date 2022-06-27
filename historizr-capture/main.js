@@ -2,6 +2,7 @@ import { Client } from 'https://deno.land/x/mqtt@0.1.2/deno/mod.ts';
 import * as utils from './utils.js'
 import * as log from './log.js'
 import { CFG } from './config.js'
+import { Broker } from './broker.js'
 
 const readAt = v => Deno.readTextFileSync(v).trim();
 const readDirAt = v => Deno.readDirSync(utils.dirPathOf(v));
@@ -38,24 +39,11 @@ const readMemInfo = () => {
     .filter(e => e.length == 2 || (e.pop() && e.length == 2))
 }
 
-const sanitizeMemName = v => {
-  const str = v.slice(0, -1)
-    // Turn any series of upper case letters into PascalCase
-    .replaceAll(/[A-Z]{2,}/g, s => `${s[0]}${s.substring(1).toLowerCase()}`)
-    .replaceAll('_', '')
-    .replaceAll(')', '')
-    .replaceAll('(', '_')
-    // This will capture 2M 4M etc
-    .replaceAll(/\d[A-Z]/g, s => s.toLowerCase())
-    .replaceAll(/[A-Z]/g, '_$&')
-    .toLowerCase()
-  return utils.trimChar(str, '_')
-}
 // Now load and pre-parse all the sanitized names for the meminfo
 readMemInfo()
   .reduce((prev, curr) => {
     const [key] = curr
-    prev[key] = `meminfo_${sanitizeMemName(key)}`
+    prev[key] = `meminfo_${utils.sanitizeMemName(key)}`
     return prev
   }, memInfoByKey)
 
@@ -99,26 +87,14 @@ for (const hwmon of readDirAt(baseHwmon)) {
 }
 log.info('Initialized!')
 
-
 log.info('Connecting to broker...')
-const client = new Client({
-  clientId: CFG.mqttClientId,
-  url: CFG.brokerUrl,
-  clean: CFG.cleanSession
-})
-await client.connect()
+const client = await Broker.make(CFG);
 log.info('Connected!')
-
-const pubOpts = {
-  retain: CFG.retainMessage,
-  qos: CFG.qualityOfService
-};
-const destTopic = utils.separatorEnd(CFG.destTopic)
 
 const publishSimple = async arr => {
   for (const entry of arr) {
     const content = readAt(entry.fullPath)
-    await client.publish(`${destTopic}${entry.name}`, content, pubOpts)
+    await client.publish(entry.name, content)
   }
 }
 const publishMemInfo = async () => {
@@ -128,7 +104,7 @@ const publishMemInfo = async () => {
     if (!name) {
       continue
     }
-    await client.publish(`${destTopic}${name}`, value, pubOpts)
+    await client.publish(name, value)
   }
 }
 
