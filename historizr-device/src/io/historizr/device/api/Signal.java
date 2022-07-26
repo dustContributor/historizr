@@ -5,13 +5,15 @@ import static io.historizr.device.OpsReq.failed;
 import static io.historizr.device.OpsReq.notFound;
 
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import io.historizr.device.OpsJson;
 import io.historizr.device.db.Db;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.json.JsonArray;
-import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.web.Router;
+import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.SqlClient;
+import io.vertx.sqlclient.Tuple;
 
 public final class Signal {
 	private Signal() {
@@ -26,41 +28,45 @@ public final class Signal {
 
 	private static final String ROUTE = "/signal";
 
-	public static Router register(EventBus bus, Router router, JDBCClient conn) {
-		var signalModel = io.historizr.device.db.Signal.class;
-		router.get(ROUTE)
-				.handler(ctx -> {
-					conn.query(Db.Sql.QUERY_SIGNAL, r -> {
+	public static Router register(EventBus bus, Router router, SqlClient conn) {
+		var toModels = Collectors.mapping((Row r) -> io.historizr.device.db.Signal.of(r), Collectors.toList());
+		var modelType = io.historizr.device.db.Signal.class;
+		router.get(ROUTE).handler(ctx -> {
+			conn.query(Db.Sql.QUERY_SIGNAL)
+					.collecting(toModels)
+					.execute(r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
-						var rs = r.result();
-						ctx.json(rs.getRows());
+						var res = r.result().value();
+						ctx.json(res);
 					});
-				});
-		router.post(ROUTE)
-				.handler(ctx -> {
-					var entity = ctx.body().asPojo(signalModel);
-					var pars = entity.into(new JsonArray());
-					conn.queryWithParams(Db.Sql.INSERT_SIGNAL, pars, r -> {
+		});
+		router.post(ROUTE).handler(ctx -> {
+			var entity = ctx.body().asPojo(modelType);
+			var pars = entity.into(Tuple.tuple());
+			conn.preparedQuery(Db.Sql.INSERT_SIGNAL)
+					.collecting(toModels)
+					.execute(pars, r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
-						var res = r.result().getRows().get(0);
+						var res = r.result().value().get(0);
 						LOGGER.fine(() -> "POST " + res);
 						sendJson(bus, EVENT_INSERTED, res);
 						ctx.json(res);
 					});
-				});
-		router.put(ROUTE)
-				.handler(ctx -> {
-					var entity = ctx.body().asPojo(signalModel);
-					var pars = entity.into(new JsonArray(), true);
-					conn.queryWithParams(Db.Sql.UPDATE_SIGNAL, pars, r -> {
+		});
+		router.put(ROUTE).handler(ctx -> {
+			var entity = ctx.body().asPojo(modelType);
+			var pars = entity.into(Tuple.tuple(), true);
+			conn.preparedQuery(Db.Sql.UPDATE_SIGNAL)
+					.collecting(toModels)
+					.execute(pars, r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
-						var rows = r.result().getRows();
+						var rows = r.result().value();
 						if (notFound(rows.size(), ctx)) {
 							return;
 						}
@@ -69,17 +75,18 @@ public final class Signal {
 						sendJson(bus, EVENT_UPDATED, res);
 						ctx.json(res);
 					});
-				});
-		router.delete(ROUTE)
-				.handler(ctx -> {
-					var id = ctx.queryParam("id");
-					var pars = new JsonArray(id);
-					conn.updateWithParams(Db.Sql.DELETE_SIGNAL, pars, r -> {
+		});
+		router.delete(ROUTE).handler(ctx -> {
+			var id = ctx.queryParam("id");
+			var pars = Tuple.of(id);
+			conn.preparedQuery(Db.Sql.DELETE_SIGNAL)
+					.collecting(toModels)
+					.execute(pars, r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
 						var res = r.result();
-						if (res.getUpdated() > 0) {
+						if (res.rowCount() > 0) {
 							var entity = io.historizr.device.db.Signal.empty(pars.getLong(0));
 							sendJson(bus, EVENT_DELETED, entity);
 						}
@@ -87,11 +94,11 @@ public final class Signal {
 						ctx.json(new Object() {
 							@SuppressWarnings("unused")
 							public int getUpdated() {
-								return res.getUpdated();
+								return res.rowCount();
 							}
 						});
 					});
-				});
+		});
 		return router;
 	}
 }

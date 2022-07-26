@@ -6,11 +6,10 @@ import io.historizr.device.OpsMisc.PassthroughCodec;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.ErrorHandler;
+import io.vertx.jdbcclient.JDBCPool;
 
 public final class Main extends AbstractVerticle {
 	private final static Logger LOGGER = Logger.getLogger(Main.class.getName());
@@ -21,11 +20,15 @@ public final class Main extends AbstractVerticle {
 		var cfg = Config.read();
 		vertx.eventBus().registerCodec(PassthroughCodec.INSTANCE);
 		LOGGER.info("Creating JDBC client...");
-		var jdbc = JDBCClient.createShared(vertx,
-				new JsonObject()
-						// Skip all the connection pooling stuff
-						.put("provider_class", SQLiteProvider.class.getName())
-						.put("cfg", cfg));
+		var jdbc = JDBCPool.pool(vertx, new H2Provider().config("cfg", cfg));
+//
+//		var jdbc = JDBCPool.pool(vertx, new JDBCConnectOptions()
+//				.setJdbcUrl(cfg.db()), new PoolOptions());
+
+//				new JsonObject()
+		// Skip all the connection pooling stuff
+//						.put("provider_class", SQLiteProvider.class.getName())
+//						.put("cfg", cfg));w
 		LOGGER.info("Created!");
 		LOGGER.info("Deploying sample worker...");
 		if (cfg.noSampling()) {

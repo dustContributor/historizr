@@ -3,10 +3,20 @@ package io.historizr.device.db;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import io.vertx.sqlclient.Row;
+
 public record DataType(int id, int mappingId, String name) {
 
-	public static DataType of(ResultSet rs) throws SQLException {
-		return new DataType(rs.getInt(1), rs.getInt(2), rs.getString(3));
+	public static DataType of(ResultSet rs) {
+		try {
+			return new DataType(rs.getInt(1), rs.getInt(2), rs.getString(3));
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static DataType of(Row rs) {
+		return new DataType(rs.getInteger(0), rs.getInteger(1), rs.getString(2));
 	}
 
 	public static enum Catalog {

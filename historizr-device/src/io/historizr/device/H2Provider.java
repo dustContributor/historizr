@@ -5,31 +5,35 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
-import org.sqlite.SQLiteConfig;
-import org.sqlite.SQLiteDataSource;
+import org.h2.jdbcx.JdbcDataSource;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.spi.DataSourceProvider;
 
-public final class SQLiteProvider implements DataSourceProvider {
-	private final static Logger LOGGER = Logger.getLogger(SQLiteProvider.class.getName());
+public final class H2Provider implements DataSourceProvider {
+	private final static Logger LOGGER = Logger.getLogger(H2Provider.class.getName());
+
+	private final JsonObject initialConfig = new JsonObject();
+
+	public H2Provider config(String key, Object value) {
+		initialConfig.put(key, value);
+		return this;
+	}
+
+	@Override
+	public final JsonObject getInitialConfig() {
+		return new JsonObject().mergeIn(initialConfig);
+	}
 
 	@Override
 	public final int maximumPoolSize(DataSource dataSource, JsonObject config) throws SQLException {
 		return 1;
 	}
 
-	private static final SQLiteConfig defaultConfig() {
-		var tmp = new SQLiteConfig();
-		// Very important to avoid trash data in the signal table.
-		tmp.enforceForeignKeys(true);
-		return tmp;
-	}
-
 	@Override
 	public final DataSource getDataSource(JsonObject config) throws SQLException {
 		var cfg = (Config) config.getValue("cfg");
-		var dataSource = new SQLiteDataSource(defaultConfig());
+		var dataSource = new JdbcDataSource();
 		dataSource.setUrl(cfg.db());
 		return dataSource;
 	}

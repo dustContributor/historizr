@@ -1,11 +1,11 @@
 {
-  "broker": "tcp://localhost:1883",
-  "db": "jdbc:sqlite:historizr.db",
+  "broker": "tcp://rpi3:1883",
+  "db": "jdbc:h2:./historizr.h2;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
   "clientId": "historizr-device",
   "hasClientIdUuid": false,
   "apiPort": 8888,
   "inputTopic": "input/#",
   "outputTopic": "output/",
   "hasDebugTopic": true,
-  "noSampling": false
+  "noSampling": true
 }
