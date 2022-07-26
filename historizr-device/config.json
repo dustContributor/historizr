@@ -1,5 +1,5 @@
 {
-  "broker": "tcp://rpi3:1883",
+  "broker": "tcp://localhost:1883",
   "db": "jdbc:h2:./historizr.h2;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
   "clientId": "historizr-device",
   "hasClientIdUuid": false,
@@ -7,5 +7,5 @@
   "inputTopic": "input/#",
   "outputTopic": "output/",
   "hasDebugTopic": true,
-  "noSampling": true
+  "noSampling": false
 }
