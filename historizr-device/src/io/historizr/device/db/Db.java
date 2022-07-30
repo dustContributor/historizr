@@ -21,19 +21,18 @@ public final class Db {
 				""".stripIndent();
 		public static final String QUERY_DATA_TYPE = """
 				select id, id_mapping as mappingId, name from data_type""".stripIndent();
-		public static final String QUERY_SIGNAL = """
+		public static final String QUERY_SIGNALS = """
 				select %s from signal
 				""".stripIndent().formatted(SIGNAL_ALIAS);
+		public static final String QUERY_SIGNAL = QUERY_SIGNALS + " where id = ?";
 		private static final String[] COLUMNS_SIGNAL = { "id_data_type", "name", "topic", "deadband", "is_on_change" };
 		public static final String INSERT_SIGNAL = """
 				insert into signal(id, %s)
-				values(?, ?, ?, ?, ?, ?)
-				returning %s""".formatted(String.join(",", COLUMNS_SIGNAL), SIGNAL_ALIAS).stripIndent();
+				values(?, ?, ?, ?, ?, ?)""".formatted(String.join(",", COLUMNS_SIGNAL)).stripIndent();
 		public static final String UPDATE_SIGNAL = """
 				update signal
 				set %s = ?
-				where id = ?
-				returning %s""".formatted(String.join(" = ?,", COLUMNS_SIGNAL), SIGNAL_ALIAS).stripIndent();
+				where id = ?""".formatted(String.join(" = ?,", COLUMNS_SIGNAL)).stripIndent();
 		public static final String DELETE_SIGNAL = """
 				delete from signal
 				where id = ?""".stripIndent();

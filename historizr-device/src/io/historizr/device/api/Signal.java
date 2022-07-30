@@ -61,19 +61,23 @@ public final class Signal {
 			var entity = ctx.body().asPojo(modelType);
 			var pars = entity.into(Tuple.tuple(), true);
 			conn.preparedQuery(Db.Sql.UPDATE_SIGNAL)
-					.collecting(toModels)
 					.execute(pars, r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
-						var rows = r.result().value();
-						if (notFound(rows, ctx)) {
-							return;
-						}
-						var res = rows.get(0);
-						LOGGER.fine(() -> "PUT " + res);
-						sendJson(bus, EVENT_UPDATED, res);
-						ctx.json(res);
+						conn.preparedQuery(Db.Sql.QUERY_SIGNAL)
+								.collecting(toModels)
+								.execute(Tuple.of(entity.id()), r1 -> {
+									var rows = r1.result().value();
+									if (notFound(rows, ctx)) {
+										return;
+									}
+									var res = rows.get(0);
+									LOGGER.fine(() -> "PUT " + res);
+									sendJson(bus, EVENT_UPDATED, res);
+									ctx.json(res);
+								});
+
 					});
 		});
 		router.delete(ROUTE).handler(ctx -> {

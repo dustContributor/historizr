@@ -29,7 +29,7 @@ public final class SignalRepo {
 		var dataTypes = new ArrayList<DataType>();
 		LOGGER.info("Querying data...");
 		try (var db = DriverManager.getConnection(cfg.db());
-				var sSt = db.prepareStatement(Db.Sql.QUERY_SIGNAL);
+				var sSt = db.prepareStatement(Db.Sql.QUERY_SIGNALS);
 				var dtSt = db.prepareStatement(Db.Sql.QUERY_DATA_TYPE);) {
 			var sRs = sSt.executeQuery();
 			while (sRs.next()) {
