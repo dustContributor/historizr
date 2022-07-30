@@ -72,14 +72,13 @@ public final class SampleRepo implements AutoCloseable {
 		}
 	}
 
-	private static final Sample sampleOf(DataType.Catalog dataType, MqttMessage msg, OffsetDateTime now,
-			boolean hasFullPayload) {
+	private static final Sample sampleOf(DataType.Catalog dataType, MqttMessage msg, boolean hasFullPayload) {
 		if (dataType == null || dataType == DataType.Catalog.UNKNOWN) {
 			// Avoid parsing payload if the type is unknown.
 			return null;
 		}
 		return hasFullPayload ? fullPayload(dataType, msg.getPayload())
-				: simplePayload(dataType, msg.toString(), now);
+				: simplePayload(dataType, msg.toString(), now());
 	}
 
 	private static final Sample fullPayload(DataType.Catalog dataType, byte[] payload) {
@@ -98,13 +97,13 @@ public final class SampleRepo implements AutoCloseable {
 		}
 	}
 
-	private static final Sample simplePayload(DataType.Catalog dataType, String payload, OffsetDateTime now) {
+	private static final Sample simplePayload(DataType.Catalog dataType, String payload, OffsetDateTime tstamp) {
 		return switch (dataType) {
-		case BOOL -> Sample.OfBool.of(payload, now);
-		case F32 -> Sample.OfFloat.of(payload, now);
-		case F64 -> Sample.OfDouble.of(payload, now);
-		case I64 -> Sample.OfLong.of(payload, now);
-		case STR -> Sample.OfString.of(payload, now);
+		case BOOL -> Sample.OfBool.of(payload, tstamp);
+		case F32 -> Sample.OfFloat.of(payload, tstamp);
+		case F64 -> Sample.OfDouble.of(payload, tstamp);
+		case I64 -> Sample.OfLong.of(payload, tstamp);
+		case STR -> Sample.OfString.of(payload, tstamp);
 		default -> null;
 		};
 	}
@@ -135,10 +134,13 @@ public final class SampleRepo implements AutoCloseable {
 		return current;
 	}
 
+	private static final OffsetDateTime now() {
+		return OffsetDateTime.now(ZoneOffset.UTC);
+	}
+
 	private final void handleMessage(String topic, MqttMessage msg) {
 		receivedCount = receivedCount() + 1;
 		LOGGER.fine(() -> "Incoming message:topic: " + msg + ":" + topic);
-		var now = OffsetDateTime.now(ZoneOffset.UTC);
 		var signal = signalRepo.signalByTopic(topic);
 		if (signal == null) {
 			// Signal doesn't has an assigned topic.
@@ -152,19 +154,19 @@ public final class SampleRepo implements AutoCloseable {
 			return;
 		}
 		var mappedType = DataType.Catalog.of(dataType.mappingId());
-		var sample = sampleOf(mappedType, msg, now, signal.hasFullPayload());
+		var sample = sampleOf(mappedType, msg, signal.hasFullPayload());
 		if (sample == null) {
-			LOGGER.warning(() -> "Unrecognized mapped data type for signal: " + signal + ", mapped to: "
-					+ dataType);
+			LOGGER.warning(() -> "Unrecognized mapped data type for signal: " + signal + ", data type: "
+					+ dataType + ", mapped to: " + mappedType);
 			// Unrecognized mapped data type. Shouldn't happen.
 			return;
 		}
-		processedCount = processedCount() + 1;
+		processedCount += 1;
 		var oid = Long.valueOf(signal.id());
 		var changed = samplesById.compute(oid, (key, existing) -> evaluateChange(signal, sample, existing));
 		if (sample != changed) {
 			// Existing sample didn't get updated, wont emit.
-			skippedCount = skippedCount() + 1;
+			skippedCount += 1;
 			return;
 		}
 		// Encode and send via mqtt.
