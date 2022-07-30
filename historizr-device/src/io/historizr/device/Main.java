@@ -21,14 +21,6 @@ public final class Main extends AbstractVerticle {
 		vertx.eventBus().registerCodec(PassthroughCodec.INSTANCE);
 		LOGGER.info("Creating JDBC client...");
 		var jdbc = JDBCPool.pool(vertx, new H2Provider().config("cfg", cfg));
-//
-//		var jdbc = JDBCPool.pool(vertx, new JDBCConnectOptions()
-//				.setJdbcUrl(cfg.db()), new PoolOptions());
-
-//				new JsonObject()
-		// Skip all the connection pooling stuff
-//						.put("provider_class", SQLiteProvider.class.getName())
-//						.put("cfg", cfg));w
 		LOGGER.info("Created!");
 		LOGGER.info("Deploying sample worker...");
 		if (cfg.noSampling()) {

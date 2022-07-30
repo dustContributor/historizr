@@ -67,7 +67,7 @@ public final class Signal {
 							return;
 						}
 						var rows = r.result().value();
-						if (notFound(rows.size(), ctx)) {
+						if (notFound(rows, ctx)) {
 							return;
 						}
 						var res = rows.get(0);

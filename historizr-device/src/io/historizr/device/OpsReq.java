@@ -1,5 +1,7 @@
 package io.historizr.device;
 
+import java.util.Collection;
+
 import io.vertx.core.AsyncResult;
 import io.vertx.ext.web.RoutingContext;
 
@@ -17,7 +19,11 @@ public final class OpsReq {
 	}
 
 	public static final boolean notFound(RoutingContext ctx) {
-		return OpsReq.notFound(0, ctx);
+		return notFound(0, ctx);
+	}
+
+	public static final boolean notFound(Collection<?> items, RoutingContext ctx) {
+		return notFound(items.size(), ctx);
 	}
 
 	public static final boolean notFound(int items, RoutingContext ctx) {
