@@ -1,13 +1,10 @@
 package io.historizr.device;
 
-import static io.historizr.device.api.Signal.EVENT_DELETED;
-import static io.historizr.device.api.Signal.EVENT_INSERTED;
-import static io.historizr.device.api.Signal.EVENT_UPDATED;
-
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.historizr.device.api.SignalApi;
 import io.historizr.device.db.Signal;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
@@ -40,15 +37,15 @@ public final class SampleWorker extends AbstractVerticle {
 				sampleRepo.debugOutput();
 			}
 			sampleRepo.subscribe();
-			inserted = handle(bus, EVENT_INSERTED, e -> {
+			inserted = handle(bus, SignalApi.EVENT_INSERTED, e -> {
 				signalRepo.updateSignal(e);
 				LOGGER.fine(() -> "Inserted " + e);
 			});
-			updated = handle(bus, EVENT_UPDATED, e -> {
+			updated = handle(bus, SignalApi.EVENT_UPDATED, e -> {
 				signalRepo.updateSignal(e);
 				LOGGER.fine(() -> "Updated " + e);
 			});
-			deleted = handle(bus, EVENT_DELETED, e -> {
+			deleted = handle(bus, SignalApi.EVENT_DELETED, e -> {
 				signalRepo.removeSignal(e);
 				sampleRepo.removeSample(e.id());
 				LOGGER.fine(() -> "Deleted " + e);

@@ -10,14 +10,15 @@ import java.util.stream.Collectors;
 import io.historizr.device.OpsJson;
 import io.historizr.device.OpsMisc;
 import io.historizr.device.db.Db;
+import io.historizr.device.db.Signal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.SqlClient;
 import io.vertx.sqlclient.Tuple;
 
-public final class Signal {
-	private Signal() {
+public final class SignalApi {
+	private SignalApi() {
 		throw new RuntimeException();
 	}
 
@@ -30,8 +31,8 @@ public final class Signal {
 	private static final String ROUTE = "/signal";
 
 	public static Router register(EventBus bus, Router router, SqlClient conn) {
-		var toModels = Collectors.mapping((Row r) -> io.historizr.device.db.Signal.of(r), Collectors.toList());
-		var modelType = io.historizr.device.db.Signal.class;
+		var toModels = Collectors.mapping((Row r) -> Signal.of(r), Collectors.toList());
+		var modelType = Signal.class;
 		router.get(ROUTE).handler(ctx -> {
 			conn.query(Db.Sql.QUERY_SIGNALS)
 					.collecting(toModels)
@@ -105,7 +106,7 @@ public final class Signal {
 						}
 						var res = r.result();
 						if (res.rowCount() > 0) {
-							var entity = io.historizr.device.db.Signal.empty(pars.getLong(0));
+							var entity = Signal.empty(pars.getLong(0));
 							sendJson(bus, EVENT_DELETED, entity);
 							LOGGER.fine(() -> "DELETE " + OpsJson.toString(entity));
 						}
