@@ -5,6 +5,7 @@ import static io.historizr.device.api.Signal.EVENT_INSERTED;
 import static io.historizr.device.api.Signal.EVENT_UPDATED;
 
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.historizr.device.db.Signal;
@@ -28,30 +29,35 @@ public final class SampleWorker extends AbstractVerticle {
 	@Override
 	public final void start() throws Exception {
 		LOGGER.info("Starting...");
-		var bus = vertx.eventBus();
-		var cfg = this.config().mapTo(Config.class);
-		this.signalRepo = new SignalRepo(cfg);
-		signalRepo.init();
-		this.sampleRepo = new SampleRepo(cfg, vertx);
-		sampleRepo.init(signalRepo);
-		if (cfg.hasDebugTopic()) {
-			sampleRepo.debugOutput();
+		try {
+			var bus = vertx.eventBus();
+			var cfg = this.config().mapTo(Config.class);
+			this.signalRepo = new SignalRepo(cfg);
+			signalRepo.init();
+			this.sampleRepo = new SampleRepo(cfg, vertx);
+			sampleRepo.init(signalRepo);
+			if (cfg.hasDebugTopic()) {
+				sampleRepo.debugOutput();
+			}
+			sampleRepo.subscribe();
+			inserted = handle(bus, EVENT_INSERTED, e -> {
+				signalRepo.updateSignal(e);
+				LOGGER.fine(() -> "Inserted " + e);
+			});
+			updated = handle(bus, EVENT_UPDATED, e -> {
+				signalRepo.updateSignal(e);
+				LOGGER.fine(() -> "Updated " + e);
+			});
+			deleted = handle(bus, EVENT_DELETED, e -> {
+				signalRepo.removeSignal(e);
+				sampleRepo.removeSample(e.id());
+				LOGGER.fine(() -> "Deleted " + e);
+			});
+			LOGGER.info("Started!");
+		} catch (Exception e) {
+			LOGGER.log(Level.SEVERE, "Failed to start", e);
+			throw e;
 		}
-		sampleRepo.subscribe();
-		inserted = handle(bus, EVENT_INSERTED, e -> {
-			signalRepo.updateSignal(e);
-			LOGGER.fine(() -> "Inserted " + e);
-		});
-		updated = handle(bus, EVENT_UPDATED, e -> {
-			signalRepo.updateSignal(e);
-			LOGGER.fine(() -> "Updated " + e);
-		});
-		deleted = handle(bus, EVENT_DELETED, e -> {
-			signalRepo.removeSignal(e);
-			sampleRepo.removeSample(e.id());
-			LOGGER.fine(() -> "Deleted " + e);
-		});
-		LOGGER.info("Started!");
 	}
 
 	@Override
