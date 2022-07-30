@@ -16,6 +16,17 @@ public final class OpsMisc {
 		return v == null || v.isEmpty();
 	}
 
+	public static Long tryParseLong(String v) {
+		if (v == null || v.isEmpty()) {
+			return null;
+		}
+		try {
+			return Long.parseLong(v);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
 	/**
 	 * Passthrough codec that returns the object to send over the event bus as-is.
 	 */

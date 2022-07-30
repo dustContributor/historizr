@@ -40,7 +40,8 @@ public record Signal(long id, int dataTypeId, String name, String topic, int dea
 				.add(name())
 				.add(topic())
 				.add(deadband())
-				.add(isOnChange());
+				.add(isOnChange())
+				.add(hasFullPayload());
 		if (isIdLast) {
 			dest.add(id());
 		}
@@ -67,7 +68,8 @@ public record Signal(long id, int dataTypeId, String name, String topic, int dea
 				.addString(name())
 				.addString(topic())
 				.addInteger(deadband())
-				.addBoolean(isOnChange());
+				.addBoolean(isOnChange())
+				.addBoolean(hasFullPayload());
 		if (isIdLast) {
 			dest.addLong(id());
 		}

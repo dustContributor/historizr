@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.historizr.device.OpsJson;
+import io.historizr.device.OpsMisc;
 import io.historizr.device.db.Db;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
@@ -32,7 +33,7 @@ public final class Signal {
 		var toModels = Collectors.mapping((Row r) -> io.historizr.device.db.Signal.of(r), Collectors.toList());
 		var modelType = io.historizr.device.db.Signal.class;
 		router.get(ROUTE).handler(ctx -> {
-			conn.query(Db.Sql.QUERY_SIGNAL)
+			conn.query(Db.Sql.QUERY_SIGNALS)
 					.collecting(toModels)
 					.execute(r -> {
 						if (failed(r, ctx)) {
@@ -51,10 +52,18 @@ public final class Signal {
 						if (failed(r, ctx)) {
 							return;
 						}
-						var res = r.result().value().get(0);
-						LOGGER.fine(() -> "POST " + res);
-						sendJson(bus, EVENT_INSERTED, res);
-						ctx.json(res);
+						conn.preparedQuery(Db.Sql.QUERY_SIGNAL)
+								.collecting(toModels)
+								.execute(Tuple.of(entity.id()), r1 -> {
+									var rows = r1.result().value();
+									if (notFound(rows, ctx)) {
+										return;
+									}
+									var res = rows.get(0);
+									LOGGER.fine(() -> "POST " + res);
+									sendJson(bus, EVENT_INSERTED, res);
+									ctx.json(res);
+								});
 					});
 		});
 		router.put(ROUTE).handler(ctx -> {
@@ -81,8 +90,13 @@ public final class Signal {
 					});
 		});
 		router.delete(ROUTE).handler(ctx -> {
-			var id = ctx.queryParam("id");
-			var pars = Tuple.of(id);
+			var sid = ctx.queryParams().get("id");
+			var oid = OpsMisc.tryParseLong(sid);
+			if (oid == null) {
+				notFound(ctx);
+				return;
+			}
+			var pars = Tuple.of(oid);
 			conn.preparedQuery(Db.Sql.DELETE_SIGNAL)
 					.collecting(toModels)
 					.execute(pars, r -> {
@@ -93,8 +107,8 @@ public final class Signal {
 						if (res.rowCount() > 0) {
 							var entity = io.historizr.device.db.Signal.empty(pars.getLong(0));
 							sendJson(bus, EVENT_DELETED, entity);
+							LOGGER.fine(() -> "DELETE " + OpsJson.toString(entity));
 						}
-						LOGGER.fine(() -> "DELETE " + OpsJson.toString(res));
 						ctx.json(new Object() {
 							@SuppressWarnings("unused")
 							public int getUpdated() {

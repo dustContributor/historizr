@@ -25,10 +25,11 @@ public final class Db {
 				select %s from signal
 				""".stripIndent().formatted(SIGNAL_ALIAS);
 		public static final String QUERY_SIGNAL = QUERY_SIGNALS + " where id = ?";
-		private static final String[] COLUMNS_SIGNAL = { "id_data_type", "name", "topic", "deadband", "is_on_change" };
+		private static final String[] COLUMNS_SIGNAL = { "id_data_type", "name", "topic", "deadband", "is_on_change",
+				"has_full_payload" };
 		public static final String INSERT_SIGNAL = """
 				insert into signal(id, %s)
-				values(?, ?, ?, ?, ?, ?)""".formatted(String.join(",", COLUMNS_SIGNAL)).stripIndent();
+				values(?, ?, ?, ?, ?, ?, ?)""".formatted(String.join(",", COLUMNS_SIGNAL)).stripIndent();
 		public static final String UPDATE_SIGNAL = """
 				update signal
 				set %s = ?
