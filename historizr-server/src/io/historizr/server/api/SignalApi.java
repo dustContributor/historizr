@@ -2,6 +2,7 @@ package io.historizr.server.api;
 
 import static io.historizr.server.OpsMisc.sendJson;
 import static io.historizr.server.OpsReq.failed;
+import static io.historizr.server.OpsReq.notFound;
 
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -12,7 +13,6 @@ import io.historizr.server.db.Signal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
 import io.vertx.sqlclient.SqlClient;
-import io.vertx.sqlclient.Tuple;
 
 public final class SignalApi {
 	private SignalApi() {
@@ -43,7 +43,7 @@ public final class SignalApi {
 		});
 		router.post(ROUTE).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
-			var pars = entity.into(Tuple.tuple(), MappingOp.ID_SKIP);
+			var pars = entity.tuple(MappingOp.ID_SKIP);
 			conn.preparedQuery(Db.Sql.INSERT_SIGNAL)
 					.collecting(toModels)
 					.execute(pars, r -> {
@@ -56,24 +56,25 @@ public final class SignalApi {
 						ctx.json(res);
 					});
 		});
-//		router.put(ROUTE)
-//				.handler(ctx -> {
-//					var entity = ctx.body().asPojo(signalModel);
-//					var pars = entity.into(new JsonArray(), true);
-//					conn.queryWithParams(Db.Sql.UPDATE_SIGNAL, pars, r -> {
-//						if (failed(r, ctx)) {
-//							return;
-//						}
-//						var rows = r.result().getRows();
-//						if (notFound(rows.size(), ctx)) {
-//							return;
-//						}
-//						var res = rows.get(0);
-//						LOGGER.fine(() -> "PUT " + res);
-//						sendJson(bus, EVENT_UPDATED, res);
-//						ctx.json(res);
-//					});
-//				});
+		router.put(ROUTE).handler(ctx -> {
+			var entity = ctx.body().asPojo(modelType);
+			var pars = entity.tuple(MappingOp.ID_LAST);
+			conn.preparedQuery(Db.Sql.UPDATE_SIGNAL)
+					.collecting(toModels)
+					.execute(pars, r -> {
+						if (failed(r, ctx)) {
+							return;
+						}
+						var rows = r.result().value();
+						if (notFound(rows, ctx)) {
+							return;
+						}
+						var res = rows.get(0);
+						LOGGER.fine(() -> "PUT " + res);
+						sendJson(bus, EVENT_UPDATED, res);
+						ctx.json(res);
+					});
+		});
 //		router.delete(ROUTE)
 //				.handler(ctx -> {
 //					var id = ctx.queryParam("id");
