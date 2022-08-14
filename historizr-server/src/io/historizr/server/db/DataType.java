@@ -2,7 +2,10 @@ package io.historizr.server.db;
 
 import io.vertx.sqlclient.Row;
 
-public record DataType(int id, int mappingId, String name) {
+public record DataType(
+		int id,
+		int mappingId,
+		String name) {
 
 	public static DataType of(Row rs) {
 		int i = 0;

@@ -7,7 +7,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 
-public record Signal(long id, long deviceId, int dataTypeId, String name, String topic, int deadband,
+public record Signal(
+		long id,
+		long deviceId,
+		int dataTypeId,
+		String name,
+		String topic,
+		int deadband,
 		boolean isOnChange,
 		boolean hasFullPayload) {
 	public static Signal of(Row rs) {
@@ -21,14 +27,6 @@ public record Signal(long id, long deviceId, int dataTypeId, String name, String
 				rs.getInteger(i++),
 				rs.getBoolean(i++),
 				rs.getBoolean(i++));
-	}
-
-	@SuppressWarnings("unchecked")
-	public final JsonObject into(JsonObject dest) {
-		Json.CODEC.fromValue(this, Map.class).forEach((k, v) -> {
-			dest.put(k.toString(), v);
-		});
-		return dest;
 	}
 
 	public final Tuple tuple(MappingOp behavior) {
