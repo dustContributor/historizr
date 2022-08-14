@@ -15,7 +15,7 @@ import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
 
 public final class Main extends AbstractVerticle {
-	private final static Logger LOGGER = Logger.getLogger(Main.class.getName());
+	private final static Logger LOGGER = OpsMisc.classLogger();
 
 	@Override
 	public final void start() throws Exception {

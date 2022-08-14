@@ -1,5 +1,6 @@
 package io.historizr.server;
 
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -14,6 +15,21 @@ import io.vertx.core.tracing.TracingPolicy;
 public final class OpsMisc {
 	private OpsMisc() {
 		throw new RuntimeException();
+	}
+
+	public static final String className() {
+		return StackWalker
+				.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+				.getCallerClass()
+				.getName();
+	}
+
+	public static final Logger classLogger() {
+		var name = StackWalker
+				.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+				.getCallerClass()
+				.getName();
+		return Logger.getLogger(name);
 	}
 
 	public static boolean isNullOrEmpty(String v) {

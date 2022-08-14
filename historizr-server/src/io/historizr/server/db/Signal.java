@@ -1,9 +1,5 @@
 package io.historizr.server.db;
 
-import java.util.Map;
-
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 

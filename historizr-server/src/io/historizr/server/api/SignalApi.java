@@ -7,6 +7,7 @@ import static io.historizr.server.OpsReq.notFound;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.historizr.server.OpsMisc;
 import io.historizr.server.db.Db;
 import io.historizr.server.db.MappingOp;
 import io.historizr.server.db.Signal;
@@ -19,8 +20,8 @@ public final class SignalApi {
 		throw new RuntimeException();
 	}
 
-	private static final String EVENT_ROOT = SignalApi.class.getName();
-	private final static Logger LOGGER = Logger.getLogger(EVENT_ROOT);
+	private static final Logger LOGGER = OpsMisc.classLogger();
+	private static final String EVENT_ROOT = Signal.class.getName();
 	public static final String EVENT_INSERTED = EVENT_ROOT + ".inserted";
 	public static final String EVENT_UPDATED = EVENT_ROOT + ".updated";
 	public static final String EVENT_DELETED = EVENT_ROOT + ".deleted";
@@ -29,7 +30,7 @@ public final class SignalApi {
 
 	public static Router register(EventBus bus, Router router, SqlClient conn) {
 		var toModels = Collectors.mapping(Signal::of, Collectors.toList());
-		var modelType = io.historizr.server.db.Signal.class;
+		var modelType = Signal.class;
 		router.get(ROUTE).handler(ctx -> {
 			conn.query(Db.Signal.QUERY)
 					.collecting(toModels)
