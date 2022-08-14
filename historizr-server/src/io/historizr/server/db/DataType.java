@@ -5,7 +5,11 @@ import io.vertx.sqlclient.Row;
 public record DataType(int id, int mappingId, String name) {
 
 	public static DataType of(Row rs) {
-		return new DataType(rs.getInteger(1), rs.getInteger(2), rs.getString(3));
+		int i = 0;
+		return new DataType(
+				rs.getInteger(i++),
+				rs.getInteger(i++),
+				rs.getString(i++));
 	}
 
 	public static enum Catalog {

@@ -31,7 +31,7 @@ public final class SignalApi {
 		var toModels = Collectors.mapping(Signal::of, Collectors.toList());
 		var modelType = io.historizr.server.db.Signal.class;
 		router.get(ROUTE).handler(ctx -> {
-			conn.query(Db.Sql.QUERY_SIGNAL)
+			conn.query(Db.Signal.QUERY)
 					.collecting(toModels)
 					.execute(r -> {
 						if (failed(r, ctx)) {
@@ -44,7 +44,7 @@ public final class SignalApi {
 		router.post(ROUTE).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
 			var pars = entity.tuple(MappingOp.ID_SKIP);
-			conn.preparedQuery(Db.Sql.INSERT_SIGNAL)
+			conn.preparedQuery(Db.Signal.INSERT)
 					.collecting(toModels)
 					.execute(pars, r -> {
 						if (failed(r, ctx)) {
@@ -59,7 +59,7 @@ public final class SignalApi {
 		router.put(ROUTE).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
 			var pars = entity.tuple(MappingOp.ID_LAST);
-			conn.preparedQuery(Db.Sql.UPDATE_SIGNAL)
+			conn.preparedQuery(Db.Signal.UPDATE)
 					.collecting(toModels)
 					.execute(pars, r -> {
 						if (failed(r, ctx)) {

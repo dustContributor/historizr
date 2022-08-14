@@ -22,7 +22,7 @@ public final class DataTypeApi {
 		var toModels = Collectors.mapping((Row r) -> DataType.of(r), Collectors.toList());
 		var modelType = DataType.class;
 		router.get(ROUTE).handler(ctx -> {
-			conn.query(Db.Sql.QUERY_DATA_TYPE)
+			conn.query(Db.DataType.QUERY)
 					.collecting(toModels)
 					.execute(r -> {
 						if (failed(r, ctx)) {
