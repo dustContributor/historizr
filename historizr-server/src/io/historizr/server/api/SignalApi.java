@@ -14,6 +14,7 @@ import io.historizr.server.db.Signal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
 import io.vertx.sqlclient.SqlClient;
+import io.vertx.sqlclient.Tuple;
 
 public final class SignalApi {
 	private SignalApi() {
@@ -21,7 +22,7 @@ public final class SignalApi {
 	}
 
 	private static final Logger LOGGER = OpsMisc.classLogger();
-	private static final String EVENT_ROOT = Signal.class.getName();
+	private static final String EVENT_ROOT = OpsMisc.className();
 	public static final String EVENT_INSERTED = EVENT_ROOT + ".inserted";
 	public static final String EVENT_UPDATED = EVENT_ROOT + ".updated";
 	public static final String EVENT_DELETED = EVENT_ROOT + ".deleted";
@@ -76,28 +77,25 @@ public final class SignalApi {
 						ctx.json(res);
 					});
 		});
-//		router.delete(ROUTE)
-//				.handler(ctx -> {
-//					var id = ctx.queryParam("id");
-//					var pars = new JsonArray(id);
-//					conn.updateWithParams(Db.Sql.DELETE_SIGNAL, pars, r -> {
-//						if (failed(r, ctx)) {
-//							return;
-//						}
-//						var res = r.result();
-//						if (res.getUpdated() > 0) {
-//							var entity = io.historizr.device.db.Signal.empty(pars.getLong(0));
-//							sendJson(bus, EVENT_DELETED, entity);
-//						}
-//						LOGGER.fine(() -> "DELETE " + OpsJson.toString(res));
-//						ctx.json(new Object() {
-//							@SuppressWarnings("unused")
-//							public int getUpdated() {
-//								return res.getUpdated();
-//							}
-//						});
-//					});
-//				});
+		router.delete(ROUTE).handler(ctx -> {
+			var entity = ctx.body().asPojo(modelType);
+			var pars = Tuple.of(entity.id());
+			conn.preparedQuery(Db.Signal.DELETE)
+					.collecting(toModels)
+					.execute(pars, r -> {
+						if (failed(r, ctx)) {
+							return;
+						}
+						var rows = r.result().value();
+						if (notFound(rows, ctx)) {
+							return;
+						}
+						var res = rows.get(0);
+						LOGGER.fine(() -> "DELETE " + res);
+						sendJson(bus, EVENT_UPDATED, res);
+						ctx.json(res);
+					});
+		});
 		return router;
 	}
 }
