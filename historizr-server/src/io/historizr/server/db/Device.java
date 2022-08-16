@@ -2,6 +2,7 @@ package io.historizr.server.db;
 
 import java.net.InetAddress;
 
+import io.vertx.pgclient.data.Inet;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 
@@ -18,7 +19,7 @@ public record Device(
 				rs.getLong(i++),
 				rs.getLong(i++),
 				rs.getString(i++),
-				rs.get(InetAddress.class, i++),
+				((Inet) rs.getValue(i++)).getAddress(),
 				rs.getInteger(i++));
 	}
 
@@ -32,7 +33,7 @@ public record Device(
 		}
 		dest.addLong(typeId())
 				.addString(name())
-				.addString(address().toString())
+				.addValue(new Inet().setAddress(address()))
 				.addInteger(port());
 		if (behavior == MappingOp.ID_LAST) {
 			dest.addLong(id());

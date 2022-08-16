@@ -55,7 +55,6 @@ public final class Db {
 		private static final String[] COL = {
 				"id_type",
 				"name",
-				"name",
 				"address",
 				"port"
 		};
