@@ -12,7 +12,7 @@ import io.historizr.device.db.Db;
 import io.historizr.device.db.Signal;
 
 public final class SignalRepo {
-	private final static Logger LOGGER = Logger.getLogger(SignalRepo.class.getName());
+	private static final Logger LOGGER = OpsMisc.classLogger();
 	private final Object signalsLock = new Object();
 	private final Config cfg;
 	private Map<String, Signal> signalsByTopic;
@@ -29,14 +29,14 @@ public final class SignalRepo {
 		var dataTypes = new ArrayList<DataType>();
 		LOGGER.info("Querying data...");
 		try (var db = DriverManager.getConnection(cfg.db());
-				var sSt = db.prepareStatement(Db.Sql.QUERY_SIGNALS);
-				var dtSt = db.prepareStatement(Db.Sql.QUERY_DATA_TYPE);) {
-			var sRs = sSt.executeQuery();
+				var sSt = db.createStatement();
+				var dtSt = db.createStatement();) {
+			var sRs = sSt.executeQuery(Db.Signal.QUERY);
 			while (sRs.next()) {
 				var row = Signal.of(sRs);
 				signals.add(row);
 			}
-			var dtRs = dtSt.executeQuery();
+			var dtRs = dtSt.executeQuery(Db.DataType.QUERY);
 			while (dtRs.next()) {
 				var row = DataType.of(dtRs);
 				dataTypes.add(row);

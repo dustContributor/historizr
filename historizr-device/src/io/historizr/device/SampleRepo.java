@@ -19,7 +19,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
 public final class SampleRepo implements AutoCloseable {
-	private final static Logger LOGGER = Logger.getLogger(SampleRepo.class.getName());
+	private static final Logger LOGGER = OpsMisc.classLogger();
 	private final Config cfg;
 	private final Vertx vertx;
 	private final ConcurrentHashMap<Long, Sample> samplesById = new ConcurrentHashMap<>();

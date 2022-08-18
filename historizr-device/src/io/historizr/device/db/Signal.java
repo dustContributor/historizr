@@ -2,66 +2,53 @@ package io.historizr.device.db;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
 
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 
-public record Signal(long id, int dataTypeId, String name, String topic, int deadband, boolean isOnChange,
+public record Signal(
+		long id,
+		int dataTypeId,
+		String name,
+		String topic,
+		int deadband,
+		boolean isOnChange,
 		boolean hasFullPayload) {
+
 	public static Signal of(Row rs) {
-		return new Signal(rs.getLong(0), rs.getInteger(1), rs.getString(2), rs.getString(3), rs.getInteger(4),
-				rs.getBoolean(5),
-				rs.getBoolean(6));
+		int i = 0;
+		return new Signal(
+				rs.getLong(i++),
+				rs.getInteger(i++),
+				rs.getString(i++),
+				rs.getString(i++),
+				rs.getInteger(i++),
+				rs.getBoolean(i++),
+				rs.getBoolean(i++));
 	}
 
 	public static Signal of(ResultSet rs) {
 		try {
-			return new Signal(rs.getLong(1), rs.getInt(2), rs.getString(3), rs.getString(4), rs.getInt(5),
-					rs.getBoolean(6),
-					rs.getBoolean(7));
+			int i = 1;
+			return new Signal(
+					rs.getLong(i++),
+					rs.getInt(i++),
+					rs.getString(i++),
+					rs.getString(i++),
+					rs.getInt(i++),
+					rs.getBoolean(i++),
+					rs.getBoolean(i++));
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public final JsonArray into(JsonArray dest) {
-		return into(dest, false);
+	public final Tuple tuple(MappingOp behavior) {
+		return into(Tuple.tuple(), behavior);
 	}
 
-	public final JsonArray into(JsonArray dest, boolean isIdLast) {
-		if (!isIdLast) {
-			dest.add(id());
-		}
-		dest.add(dataTypeId())
-				.add(name())
-				.add(topic())
-				.add(deadband())
-				.add(isOnChange())
-				.add(hasFullPayload());
-		if (isIdLast) {
-			dest.add(id());
-		}
-		return dest;
-	}
-
-	@SuppressWarnings("unchecked")
-	public final JsonObject into(JsonObject dest) {
-		Json.CODEC.fromValue(this, Map.class).forEach((k, v) -> {
-			dest.put(k.toString(), v);
-		});
-		return dest;
-	}
-
-	public final Tuple into(Tuple dest) {
-		return into(dest, false);
-	}
-
-	public final Tuple into(Tuple dest, boolean isIdLast) {
-		if (!isIdLast) {
+	public final Tuple into(Tuple dest, MappingOp behavior) {
+		if (behavior == MappingOp.ID_FIRST) {
 			dest.addLong(id());
 		}
 		dest.addInteger(dataTypeId())
@@ -70,7 +57,7 @@ public record Signal(long id, int dataTypeId, String name, String topic, int dea
 				.addInteger(deadband())
 				.addBoolean(isOnChange())
 				.addBoolean(hasFullPayload());
-		if (isIdLast) {
+		if (behavior == MappingOp.ID_LAST) {
 			dest.addLong(id());
 		}
 		return dest;

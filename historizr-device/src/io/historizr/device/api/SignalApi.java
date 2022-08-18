@@ -7,9 +7,9 @@ import static io.historizr.device.OpsReq.notFound;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.historizr.device.OpsJson;
 import io.historizr.device.OpsMisc;
 import io.historizr.device.db.Db;
+import io.historizr.device.db.MappingOp;
 import io.historizr.device.db.Signal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
@@ -22,8 +22,8 @@ public final class SignalApi {
 		throw new RuntimeException();
 	}
 
-	private static final String EVENT_ROOT = Signal.class.getName();
-	private final static Logger LOGGER = Logger.getLogger(EVENT_ROOT);
+	private static final Logger LOGGER = OpsMisc.classLogger();
+	private static final String EVENT_ROOT = OpsMisc.className();
 	public static final String EVENT_INSERTED = EVENT_ROOT + ".inserted";
 	public static final String EVENT_UPDATED = EVENT_ROOT + ".updated";
 	public static final String EVENT_DELETED = EVENT_ROOT + ".deleted";
@@ -34,7 +34,7 @@ public final class SignalApi {
 		var toModels = Collectors.mapping((Row r) -> Signal.of(r), Collectors.toList());
 		var modelType = Signal.class;
 		router.get(ROUTE).handler(ctx -> {
-			conn.query(Db.Sql.QUERY_SIGNALS)
+			conn.query(Db.Signal.QUERY)
 					.collecting(toModels)
 					.execute(r -> {
 						if (failed(r, ctx)) {
@@ -46,14 +46,14 @@ public final class SignalApi {
 		});
 		router.post(ROUTE).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
-			var pars = entity.into(Tuple.tuple());
-			conn.preparedQuery(Db.Sql.INSERT_SIGNAL)
+			var pars = entity.tuple(MappingOp.ID_FIRST);
+			conn.preparedQuery(Db.Signal.INSERT)
 					.collecting(toModels)
 					.execute(pars, r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
-						conn.preparedQuery(Db.Sql.QUERY_SIGNAL)
+						conn.preparedQuery(Db.Signal.QUERY_BY_ID)
 								.collecting(toModels)
 								.execute(Tuple.of(entity.id()), r1 -> {
 									var rows = r1.result().value();
@@ -69,13 +69,13 @@ public final class SignalApi {
 		});
 		router.put(ROUTE).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
-			var pars = entity.into(Tuple.tuple(), true);
-			conn.preparedQuery(Db.Sql.UPDATE_SIGNAL)
+			var pars = entity.tuple(MappingOp.ID_LAST);
+			conn.preparedQuery(Db.Signal.UPDATE)
 					.execute(pars, r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
-						conn.preparedQuery(Db.Sql.QUERY_SIGNAL)
+						conn.preparedQuery(Db.Signal.QUERY_BY_ID)
 								.collecting(toModels)
 								.execute(Tuple.of(entity.id()), r1 -> {
 									var rows = r1.result().value();
@@ -91,31 +91,20 @@ public final class SignalApi {
 					});
 		});
 		router.delete(ROUTE).handler(ctx -> {
-			var sid = ctx.queryParams().get("id");
-			var oid = OpsMisc.tryParseLong(sid);
-			if (oid == null) {
-				notFound(ctx);
-				return;
-			}
-			var pars = Tuple.of(oid);
-			conn.preparedQuery(Db.Sql.DELETE_SIGNAL)
-					.collecting(toModels)
+			var entity = ctx.body().asPojo(modelType);
+			var pars = Tuple.of(entity.id());
+			conn.preparedQuery(Db.Signal.DELETE)
 					.execute(pars, r -> {
 						if (failed(r, ctx)) {
 							return;
 						}
-						var res = r.result();
-						if (res.rowCount() > 0) {
-							var entity = Signal.empty(pars.getLong(0));
-							sendJson(bus, EVENT_DELETED, entity);
-							LOGGER.fine(() -> "DELETE " + OpsJson.toString(entity));
+						var rows = r.result().rowCount();
+						if (notFound(rows, ctx)) {
+							return;
 						}
-						ctx.json(new Object() {
-							@SuppressWarnings("unused")
-							public int getUpdated() {
-								return res.rowCount();
-							}
-						});
+						LOGGER.fine(() -> "DELETE " + entity);
+						sendJson(bus, EVENT_DELETED, entity);
+						ctx.json(entity);
 					});
 		});
 		return router;

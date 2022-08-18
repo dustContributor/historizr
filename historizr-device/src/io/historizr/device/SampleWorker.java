@@ -12,7 +12,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 
 public final class SampleWorker extends AbstractVerticle {
-	private final static Logger LOGGER = Logger.getLogger(SampleWorker.class.getName());
+	private static final Logger LOGGER = OpsMisc.classLogger();
 	private SignalRepo signalRepo;
 	private SampleRepo sampleRepo;
 	private MessageConsumer<JsonObject> inserted;

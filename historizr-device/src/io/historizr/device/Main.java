@@ -15,7 +15,7 @@ import io.vertx.ext.web.handler.ErrorHandler;
 import io.vertx.jdbcclient.JDBCPool;
 
 public final class Main extends AbstractVerticle {
-	private final static Logger LOGGER = Logger.getLogger(Main.class.getName());
+	private static final Logger LOGGER = OpsMisc.classLogger();
 
 	@Override
 	public final void start() throws Exception {

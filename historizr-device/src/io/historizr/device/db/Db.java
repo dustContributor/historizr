@@ -1,42 +1,61 @@
 package io.historizr.device.db;
 
+import java.util.stream.Stream;
+
 public final class Db {
 	private Db() {
 		throw new RuntimeException();
 	}
 
-	public static final class Sql {
-		private Sql() {
+	public static final class Signal {
+		private Signal() {
 			throw new RuntimeException();
 		}
 
-		private static final String SIGNAL_ALIAS = """
-					id,
-					id_data_type as dataTypeId,
-					name,
-					topic,
-					deadband,
-					is_on_change as isOnChange,
-					has_full_payload as hasFullPayload
-				""".stripIndent();
-		public static final String QUERY_DATA_TYPE = """
-				select id, id_mapping as mappingId, name from data_type""".stripIndent();
-		public static final String QUERY_SIGNALS = """
-				select %s from signal
-				""".stripIndent().formatted(SIGNAL_ALIAS);
-		public static final String QUERY_SIGNAL = QUERY_SIGNALS + " where id = ?";
-		private static final String[] COLUMNS_SIGNAL = { "id_data_type", "name", "topic", "deadband", "is_on_change",
-				"has_full_payload" };
-		public static final String INSERT_SIGNAL = """
-				insert into signal(id, %s)
-				values(?, ?, ?, ?, ?, ?, ?)""".formatted(String.join(",", COLUMNS_SIGNAL)).stripIndent();
-		public static final String UPDATE_SIGNAL = """
-				update signal
+		private static final String TBL = "signal";
+		private static final String[] COL = {
+				"id_data_type",
+				"name",
+				"topic",
+				"deadband",
+				"is_on_change",
+				"has_full_payload"
+		};
+		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
+				.toArray(String[]::new);
+		public static final String QUERY = select(TBL, COL_ALL);
+		public static final String QUERY_BY_ID = QUERY + " where id = $1";
+		public static final String INSERT = sql("""
+				insert into %s(%s)
+				values(?, ?, ?, ?, ?, ?, ?)""", TBL, String.join(",", COL_ALL));
+		public static final String UPDATE = sql("""
+				update %s
 				set %s = ?
-				where id = ?""".formatted(String.join(" = ?,", COLUMNS_SIGNAL)).stripIndent();
-		public static final String DELETE_SIGNAL = """
-				delete from signal
-				where id = ?""".stripIndent();
+				where id = ?""", TBL, String.join(" = ?,", COL));
+		public static final String DELETE = sql("""
+				delete from %s
+				where id = ?""", TBL);
+	}
+
+	public static final class DataType {
+		private DataType() {
+			throw new RuntimeException();
+		}
+
+		private static final String TBL = "data_type";
+		private static final String[] COL = { "id_mapping", "name" };
+		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
+				.toArray(String[]::new);
+
+		public static final String QUERY = select(TBL, COL_ALL);
+	}
+
+	private static final String select(String tbl, String[] allCols) {
+		return sql("select %s from %s", String.join(",", allCols), tbl);
+	}
+
+	private static final String sql(String base, Object... fmts) {
+		return base.formatted(fmts).stripIndent();
 	}
 
 }
