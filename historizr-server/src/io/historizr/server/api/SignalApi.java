@@ -92,7 +92,7 @@ public final class SignalApi {
 						}
 						var res = rows.get(0);
 						LOGGER.fine(() -> "DELETE " + res);
-						sendJson(bus, EVENT_UPDATED, res);
+						sendJson(bus, EVENT_DELETED, res);
 						ctx.json(res);
 					});
 		});
