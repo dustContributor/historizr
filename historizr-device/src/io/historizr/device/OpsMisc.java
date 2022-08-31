@@ -29,6 +29,14 @@ public final class OpsMisc {
 		return Logger.getLogger(name);
 	}
 
+	public static final String hostName() {
+		try {
+			return java.net.InetAddress.getLocalHost().getHostName();
+		} catch (Exception e) {
+			return "unknown";
+		}
+	}
+
 	public static boolean isNullOrEmpty(String v) {
 		return v == null || v.isEmpty();
 	}

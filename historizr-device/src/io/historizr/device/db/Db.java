@@ -7,6 +7,14 @@ public final class Db {
 		throw new RuntimeException();
 	}
 
+	public static final class Misc {
+		private Misc() {
+			throw new RuntimeException();
+		}
+
+		public static final String REVISION_SUM = "select sum(revision) from signal";
+	}
+
 	public static final class Signal {
 		private Signal() {
 			throw new RuntimeException();
@@ -19,7 +27,8 @@ public final class Db {
 				"topic",
 				"deadband",
 				"is_on_change",
-				"has_full_payload"
+				"has_full_payload",
+				"revision"
 		};
 		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
 				.toArray(String[]::new);
@@ -27,7 +36,7 @@ public final class Db {
 		public static final String QUERY_BY_ID = QUERY + " where id = $1";
 		public static final String INSERT = sql("""
 				insert into %s(%s)
-				values(?, ?, ?, ?, ?, ?, ?)""", TBL, String.join(",", COL_ALL));
+				values(?, ?, ?, ?, ?, ?, ?, ?)""", TBL, String.join(",", COL_ALL));
 		public static final String UPDATE = sql("""
 				update %s
 				set %s = ?

@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import io.historizr.device.OpsMisc.PassthroughCodec;
 import io.historizr.device.api.DataTypeApi;
+import io.historizr.device.api.DeviceApi;
 import io.historizr.device.api.SignalApi;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
@@ -45,6 +46,7 @@ public final class Main extends AbstractVerticle {
 			// Register api endpoints.
 			SignalApi.register(vertx.eventBus(), router, jdbc);
 			DataTypeApi.register(vertx.eventBus(), router, jdbc);
+			DeviceApi.register(vertx.eventBus(), router, jdbc);
 			LOGGER.info("Configured!");
 			LOGGER.info("Creating HTTP server...");
 			// Create the HTTP server
