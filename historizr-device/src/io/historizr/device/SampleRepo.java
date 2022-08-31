@@ -144,19 +144,19 @@ public final class SampleRepo implements AutoCloseable {
 		var signal = signalRepo.signalByTopic(topic);
 		if (signal == null) {
 			// Signal doesn't has an assigned topic.
-			LOGGER.warning(() -> "Topic doesn't has an assigned signal: " + topic);
+			LOGGER.fine(() -> "Topic doesn't has an assigned signal: " + topic);
 			return;
 		}
 		var dataType = signalRepo.dataTypeById(signal.dataTypeId());
 		if (dataType == null) {
 			// Unrecognized data type for this signal. Shouldn't happen.
-			LOGGER.warning(() -> "Unrecognized data type for signal: " + signal);
+			LOGGER.fine(() -> "Unrecognized data type for signal: " + signal);
 			return;
 		}
 		var mappedType = DataType.Catalog.of(dataType.mappingId());
 		var sample = sampleOf(mappedType, msg, signal.hasFullPayload());
 		if (sample == null) {
-			LOGGER.warning(() -> "Unrecognized mapped data type for signal: " + signal + ", data type: "
+			LOGGER.fine(() -> "Unrecognized mapped data type for signal: " + signal + ", data type: "
 					+ dataType + ", mapped to: " + mappedType);
 			// Unrecognized mapped data type. Shouldn't happen.
 			return;
