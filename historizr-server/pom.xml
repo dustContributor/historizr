@@ -19,8 +19,14 @@
 		<vertx.version>4.3.0</vertx.version>
 		<jackson.version>2.13.2</jackson.version>
 		<scram.version>2.1</scram.version>
+		<pug4j.version>2.0.5</pug4j.version>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>de.neuland-bfi</groupId>
+			<artifactId>pug4j</artifactId>
+			<version>${pug4j.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.ongres.scram</groupId>
 			<artifactId>client</artifactId>
@@ -54,6 +60,11 @@
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-web</artifactId>
+			<version>${vertx.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-web-client</artifactId>
 			<version>${vertx.version}</version>
 		</dependency>
 	</dependencies>

@@ -1,0 +1,25 @@
+doctype html
+html(lang="en")
+  head
+    title= 'Devices'
+  body
+    style. 
+      th, td {
+        border-left: 1px solid;
+        border-bottom: 1px solid;
+        padding: 0.25em;
+      }
+    table 
+      tr
+        th='Id'
+        th='Type Id'
+        th='Name'
+        th='Address'
+        th='Port'
+      each item in items
+        tr
+          td=item.id()
+          td=item.typeId()
+          td=item.name()
+          td=item.address()
+          td=item.port()
