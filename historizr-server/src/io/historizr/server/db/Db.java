@@ -68,6 +68,26 @@ public final class Db {
 		public static final String DELETE = delete(TBL, COL_ALL);
 	}
 
+	public static final class DeviceType {
+		private DeviceType() {
+			throw new RuntimeException();
+		}
+
+		private static final String TBL = "device_type";
+		private static final String[] COL = {
+				"name",
+				"description"
+		};
+		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
+				.toArray(String[]::new);
+
+		public static final String QUERY = select(TBL, COL_ALL);
+		public static final String QUERY_BY_ID = QUERY + " where id = $1";
+		public static final String INSERT = insert(TBL, COL, COL_ALL);
+		public static final String UPDATE = update(TBL, COL, COL_ALL);
+		public static final String DELETE = delete(TBL, COL_ALL);
+	}
+
 	private static final CharSequence argList(int count) {
 		return argList(1, count);
 	}
