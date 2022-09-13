@@ -3,12 +3,19 @@ package io.historizr.server.view;
 import static io.historizr.server.OpsReq.failed;
 
 import java.util.Map;
+import java.util.function.IntFunction;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.historizr.server.OpsMisc;
+import io.historizr.server.OpsReq;
+import io.historizr.server.db.DataType;
 import io.historizr.server.db.Db;
 import io.historizr.server.db.Device;
+import io.historizr.server.db.DeviceType;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.common.template.TemplateEngine;
@@ -25,22 +32,40 @@ public final class DeviceView {
 
 	public static void register(Vertx vertx, Router router, TemplateEngine tmpl, SqlClient conn) {
 		var toModels = Collectors.mapping(Device::of, Collectors.toList());
+		var toDeviceTypes = Collectors.mapping(DeviceType::of, Collectors.toList());
 		var modelType = Device.class;
 		router.get(ROUTE).handler(ctx -> {
-			conn.query(Db.Device.QUERY)
+			var ftDeviceTypes = conn.query(Db.DeviceType.QUERY)
+					.collecting(toDeviceTypes)
+					.execute()
+					.onFailure(r -> {
+						var msg = "Failed to query device types";
+						LOGGER.log(Level.WARNING, msg, r);
+						ctx.fail(r);
+					});
+			var ftDevices = conn.query(Db.Device.QUERY)
 					.collecting(toModels)
-					.execute(r -> {
-						if (failed(r, ctx)) {
+					.execute()
+					.onFailure(r -> {
+						var msg = "Failed to query devices";
+						LOGGER.log(Level.WARNING, msg, r);
+						ctx.fail(r);
+					});
+			CompositeFuture.all(ftDeviceTypes, ftDevices)
+					.compose(r -> {
+						var deviceTypesById = ftDeviceTypes.result().value()
+								.stream()
+								.collect(Collectors.toMap(v -> v.id(), v -> v));
+						var devices = ftDevices.result().value();
+						return tmpl.render(
+								Map.of("items", devices, "deviceTypesById", deviceTypesById),
+								"res/device");
+					})
+					.onComplete(h -> {
+						if (failed(h, ctx)) {
 							return;
 						}
-						var res = r.result().value();
-						tmpl.render(Map.of("items", res), "res/device")
-								.onComplete(h -> {
-									if (failed(h, ctx)) {
-										return;
-									}
-									ctx.end(h.result());
-								});
+						ctx.end(h.result());
 					});
 		});
 	}

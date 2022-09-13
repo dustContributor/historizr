@@ -13,6 +13,7 @@ html(lang="en")
       tr
         th='Id'
         th='Type Id'
+        th='Type Name'
         th='Name'
         th='Address'
         th='Port'
@@ -20,6 +21,7 @@ html(lang="en")
         tr
           td=item.id()
           td=item.typeId()
+          td=deviceTypesById.get(item.typeId()).name()
           td=item.name()
           td=item.address()
           td=item.port()
