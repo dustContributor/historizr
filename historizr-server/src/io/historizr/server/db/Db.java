@@ -14,17 +14,18 @@ public final class Db {
 			throw new RuntimeException();
 		}
 
-		private static final String TBL = "signal";
-		private static final String[] COL = {
+		public static final String TBL = "signal";
+		public static final String[] COL = {
 				"id_device",
 				"id_data_type",
 				"name",
 				"topic",
 				"deadband",
 				"is_on_change",
-				"has_full_payload"
+				"has_full_payload",
+				"revision"
 		};
-		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
+		public static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
 				.toArray(String[]::new);
 
 		public static final String QUERY = select(TBL, COL_ALL);
@@ -38,9 +39,9 @@ public final class Db {
 			throw new RuntimeException();
 		}
 
-		private static final String TBL = "data_type";
-		private static final String[] COL = { "id_mapping", "name" };
-		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
+		public static final String TBL = "data_type";
+		public static final String[] COL = { "id_mapping", "name" };
+		public static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
 				.toArray(String[]::new);
 
 		public static final String QUERY = select(TBL, COL_ALL);
@@ -51,14 +52,14 @@ public final class Db {
 			throw new RuntimeException();
 		}
 
-		private static final String TBL = "device";
-		private static final String[] COL = {
+		public static final String TBL = "device";
+		public static final String[] COL = {
 				"id_type",
 				"name",
 				"address",
 				"port"
 		};
-		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
+		public static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
 				.toArray(String[]::new);
 
 		public static final String QUERY = select(TBL, COL_ALL);
@@ -73,12 +74,12 @@ public final class Db {
 			throw new RuntimeException();
 		}
 
-		private static final String TBL = "device_type";
-		private static final String[] COL = {
+		public static final String TBL = "device_type";
+		public static final String[] COL = {
 				"name",
 				"description"
 		};
-		private static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
+		public static final String[] COL_ALL = Stream.concat(Stream.of("id"), Stream.of(COL))
 				.toArray(String[]::new);
 
 		public static final String QUERY = select(TBL, COL_ALL);
@@ -88,11 +89,11 @@ public final class Db {
 		public static final String DELETE = delete(TBL, COL_ALL);
 	}
 
-	private static final CharSequence argList(int count) {
+	public static final CharSequence argList(int count) {
 		return argList(1, count);
 	}
 
-	private static final CharSequence argList(int start, int count) {
+	public static final CharSequence argList(int start, int count) {
 		var b = new StringBuilder();
 		var len = start + count;
 		for (int i = start; i < len; ++i) {
@@ -104,15 +105,15 @@ public final class Db {
 		return b;
 	}
 
-	private static final String select(String tbl, String[] allCols) {
+	public static final String select(String tbl, String[] allCols) {
 		return sql("select %s from %s", String.join(",", allCols), tbl);
 	}
 
-	private static final String sql(String base, Object... fmts) {
+	public static final String sql(String base, Object... fmts) {
 		return base.formatted(fmts).stripIndent();
 	}
 
-	private static final String insert(String tbl, String[] cols, String[] allCols) {
+	public static final String insert(String tbl, String[] cols, String[] allCols) {
 		return sql("""
 				insert into %s(%s)
 				values(%s)
@@ -120,7 +121,7 @@ public final class Db {
 				String.join(",", allCols));
 	}
 
-	private static final String update(String tbl, String[] cols, String[] allCols) {
+	public static final String update(String tbl, String[] cols, String[] allCols) {
 		return sql("""
 				update %s
 				set %s
@@ -131,7 +132,7 @@ public final class Db {
 				String.join(",", allCols));
 	}
 
-	private static final String delete(String tbl, String[] allCols) {
+	public static final String delete(String tbl, String[] allCols) {
 		return sql("""
 				delete from %s
 				where id = $1

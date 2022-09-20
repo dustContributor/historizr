@@ -11,7 +11,8 @@ public record Signal(
 		String topic,
 		int deadband,
 		boolean isOnChange,
-		boolean hasFullPayload) {
+		boolean hasFullPayload,
+		long revision) {
 	public static Signal of(Row rs) {
 		int i = 0;
 		return new Signal(
@@ -22,7 +23,8 @@ public record Signal(
 				rs.getString(i++),
 				rs.getInteger(i++),
 				rs.getBoolean(i++),
-				rs.getBoolean(i++));
+				rs.getBoolean(i++),
+				rs.getLong(i++));
 	}
 
 	public final Tuple tuple(MappingOp behavior) {
@@ -39,7 +41,8 @@ public record Signal(
 				.addString(topic())
 				.addInteger(deadband())
 				.addBoolean(isOnChange())
-				.addBoolean(hasFullPayload());
+				.addBoolean(hasFullPayload())
+				.addLong(revision());
 		if (behavior == MappingOp.ID_LAST) {
 			dest.addLong(id());
 		}
@@ -51,6 +54,6 @@ public record Signal(
 	}
 
 	public static final Signal empty(long id) {
-		return new Signal(id, 0, 0, null, null, 0, false, false);
+		return new Signal(id, 0, 0, null, null, 0, false, false, 0);
 	}
 }
