@@ -23,7 +23,8 @@ import io.vertx.sqlclient.Tuple;
 
 public final class SignalWorker extends AbstractVerticle {
 	private static final Logger LOGGER = OpsMisc.classLogger();
-	private static final String API_DEVICE = "/device";
+	public static final String API_DEVICE = "/device";
+	public static final String API_SIGNAL = "/signal";
 
 	private final SqlClient conn;
 
@@ -42,7 +43,7 @@ public final class SignalWorker extends AbstractVerticle {
 	}
 
 	private final Future<HttpResponse<Buffer>> notifySignal(HttpMethod method, Device device, Signal signal) {
-		return this.client.request(method, device.port(), device.address().getHostAddress(), API_DEVICE)
+		return this.client.request(method, device.port(), device.address().getHostAddress(), API_SIGNAL)
 				.sendJson(signal)
 				.onFailure(e -> {
 					var kind = "UNKNOWN";
