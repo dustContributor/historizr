@@ -1,0 +1,5 @@
+#!/bin/bash
+cd ~/historizr-device
+java -XX:+UseG1GC -XX:+DisableExplicitGC -XX:+UseStringDeduplication \
+-Djava.util.logging.config.file=logging.properties \
+-jar ./historizr-device.jar run io.historizr.device.Main
