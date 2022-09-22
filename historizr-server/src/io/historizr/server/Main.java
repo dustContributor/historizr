@@ -52,7 +52,7 @@ public final class Main extends AbstractVerticle {
 		// Capture data passed as the body of requests.
 		router.route().handler(BodyHandler.create(false));
 		// Register api endpoints.
-		DeviceApi.register(vertx.eventBus(), router, jdbc);
+		DeviceApi.register(vertx, router, jdbc);
 		DeviceTypeApi.register(vertx, router, jdbc);
 		SignalApi.register(vertx.eventBus(), router, jdbc);
 		DataTypeApi.register(vertx.eventBus(), router, jdbc);

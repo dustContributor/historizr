@@ -95,12 +95,16 @@ public final class Db {
 			throw new RuntimeException();
 		}
 
-		public static final String REVISION_SUM = Db.sql("""
-				select d.id, sum(s.revision) as revision_sum
+		public static final String REVISION_TOTAL = Db.sql("""
+				select d.%s, coalesce(sum(s.revision), 0) as revision_total
 				from %s d
-				join %s s on d.id = s.id_device and d.id = $1
+				left join %s s on d.id = s.id_device
+				where d.id = $1
 				group by d.id
-				""", Db.Device.TBL, Db.Signal.TBL);
+				""",
+				String.join(", d.", Db.Device.COL_ALL),
+				Db.Device.TBL,
+				Db.Signal.TBL);
 	}
 
 	private static final CharSequence argList(int count) {
