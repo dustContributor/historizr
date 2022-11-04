@@ -43,17 +43,32 @@ public final class SignalWorker extends AbstractVerticle {
 	}
 
 	private final Future<HttpResponse<Buffer>> notifySignal(HttpMethod method, Device device, Signal signal) {
-		return this.client.request(method, device.port(), device.address().getHostAddress(), API_SIGNAL)
-				.sendJson(signal)
-				.onFailure(e -> {
-					var kind = "UNKNOWN";
-					if (HttpMethod.POST.equals(method)) {
-						kind = "INSERT";
-					} else if (HttpMethod.PUT.equals(method)) {
-						kind = "UPDATE";
-					} else if (HttpMethod.DELETE.equals(method)) {
-						kind = "DELETE";
+		var port = device.port();
+		var address = device.address().getHostAddress();
+		String kind;
+		if (HttpMethod.POST.equals(method)) {
+			kind = "INSERT";
+		} else if (HttpMethod.PUT.equals(method)) {
+			kind = "UPDATE";
+		} else if (HttpMethod.DELETE.equals(method)) {
+			kind = "DELETE";
+		} else {
+			kind = "UNKNOWN";
+		}
+		var body = JsonObject.mapFrom(signal);
+		// Device id isn't used on the device's signal model
+		body.remove("deviceId");
+		return this.client.request(method, port, address, API_SIGNAL)
+				.sendJson(body)
+				.onSuccess(v -> {
+					if (v.statusCode() != 200) {
+						LOGGER.warning("Failed notifying signal %s %s on device %s with status ".formatted(signal.id(),
+								kind, device.id(), v.statusCode()));
+						return;
 					}
+					LOGGER.fine(() -> "Notified device %s of %s!".formatted(device.id(), kind));
+				})
+				.onFailure(e -> {
 					LOGGER.log(Level.WARNING,
 							"Failed notifying signal %s %s on device %s".formatted(signal.id(), kind, device.id()), e);
 				});
@@ -84,19 +99,19 @@ public final class SignalWorker extends AbstractVerticle {
 			this.client = WebClient.create(vertx);
 			var bus = vertx.eventBus();
 			inserted = handle(bus, SignalApi.EVENT_INSERTED, signal -> {
-				LOGGER.fine(() -> "Inserted " + signal);
+				LOGGER.fine(() -> "Notifying device of signal INSERT " + signal);
 				queryDevice(signal).map(device -> {
 					return notifySignal(HttpMethod.POST, device, signal);
 				});
 			});
 			updated = handle(bus, SignalApi.EVENT_UPDATED, signal -> {
-				LOGGER.fine(() -> "Updated " + signal);
+				LOGGER.fine(() -> "Notifying device of signal UPDATE " + signal);
 				queryDevice(signal).map(device -> {
 					return notifySignal(HttpMethod.PUT, device, signal);
 				});
 			});
 			deleted = handle(bus, SignalApi.EVENT_DELETED, signal -> {
-				LOGGER.fine(() -> "Deleted " + signal);
+				LOGGER.fine(() -> "Notifying device of signal DELETE " + signal);
 				queryDevice(signal).map(device -> {
 					return notifySignal(HttpMethod.DELETE, device, signal);
 				});

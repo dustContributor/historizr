@@ -10,6 +10,7 @@ import io.historizr.server.api.SignalApi;
 import io.historizr.server.tmpl.PugTemplateEngine;
 import io.historizr.server.view.DeviceView;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -60,8 +61,14 @@ public final class Main extends AbstractVerticle {
 		LOGGER.info("Configuring HTTP views...");
 		DeviceView.register(vertx, router, tmpl, jdbc);
 		LOGGER.info("Configured!");
+		// Signal worker for notifying devices of signal changes
+		LOGGER.info("Deploying signal worker...");
+		vertx.deployVerticle(new SignalWorker(jdbc), new DeploymentOptions()
+				.setWorker(true)
+				.setConfig(cfg.toJson()))
+				.onSuccess(v -> LOGGER.info("Deployed! " + v));
+		// Create the HTTP server for api
 		LOGGER.info("Starting HTTP server...");
-		// Create the HTTP server
 		vertx.createHttpServer()
 				// Handle every request using the router
 				.requestHandler(router)
