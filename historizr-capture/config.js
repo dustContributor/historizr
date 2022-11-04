@@ -8,5 +8,6 @@ export const CFG = Object.freeze({
   destTopic: 'input/',
   retainMessage: false,
   cleanSession: true,
-  qualityOfService: 1
+  qualityOfService: 1,
+  debug: false
 });

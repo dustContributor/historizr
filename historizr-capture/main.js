@@ -1,4 +1,3 @@
-import { Client } from 'https://deno.land/x/mqtt@0.1.2/deno/mod.ts';
 import * as utils from './utils.js'
 import * as log from './log.js'
 import { CFG } from './config.js'
@@ -116,10 +115,16 @@ setInterval(async () => {
 }, CFG.intervalSeconds * 1000)
 log.info('Publishing...')
 
-// const decoder = new TextDecoder();
-// let msgCount = 0
-// client.on('message', (topic, payload) => {
-//   console.log(`message: ${++msgCount}`)
-//   console.log(topic, decoder.decode(payload))
-// })
-// await client.subscribe('/input/#')
+if (CFG.debug) {
+  log.info('Debugging is ENABLED')
+  const decoder = new TextDecoder();
+  let msgCount = 0
+  log.info('Subscribing to input topic...')
+  client.onReceived((topic, payload) => {
+    console.log(`message: ${++msgCount}`)
+    console.log(topic, decoder.decode(payload))
+  })
+  await client.subscribe(utils.separatorEnd(CFG.destTopic) + '#')
+  log.info('Subscribed!')
+}
+

@@ -17,6 +17,14 @@ export class Broker {
     await this.#client.publish(`${this.#destTopic}${name}`, content, this.#pubOpts)
   }
 
+  async subscribe(topic) {
+    return await this.#client.subscribe(topic)
+  }
+
+  onReceived(e) {
+    return this.#client.on('message', e)
+  }
+
   static async make(cfg) {
     const client = new Client({
       clientId: cfg.mqttClientId,
