@@ -12,6 +12,7 @@ html(lang="en")
         th='Name'
         th='Address'
         th='Port'
+        th='Signals'
       each item in items
         tr
           td.app-num=item.id()
@@ -20,3 +21,6 @@ html(lang="en")
           td=item.name()
           td=item.address()
           td.app-num=item.port()
+          td.app-btn
+            a(href='signal?deviceId='+item.id())
+              input(type='button', value='Go')
