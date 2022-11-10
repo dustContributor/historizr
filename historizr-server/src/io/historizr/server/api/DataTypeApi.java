@@ -1,11 +1,11 @@
 package io.historizr.server.api;
 
-import static io.historizr.server.OpsReq.failed;
+import static io.historizr.shared.OpsReq.failed;
 
 import java.util.stream.Collectors;
 
-import io.historizr.server.db.DataType;
 import io.historizr.server.db.Db;
+import io.historizr.shared.db.DataType;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
 import io.vertx.sqlclient.Row;

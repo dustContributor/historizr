@@ -2,13 +2,14 @@ package io.historizr.server;
 
 import java.util.logging.Logger;
 
-import io.historizr.server.OpsMisc.PassthroughCodec;
 import io.historizr.server.api.DataTypeApi;
 import io.historizr.server.api.DeviceApi;
 import io.historizr.server.api.DeviceTypeApi;
 import io.historizr.server.api.SignalApi;
 import io.historizr.server.tmpl.PugTemplateEngine;
 import io.historizr.server.view.DeviceView;
+import io.historizr.shared.OpsMisc;
+import io.historizr.shared.OpsMisc.PassthroughCodec;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;

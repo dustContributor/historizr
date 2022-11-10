@@ -2,6 +2,7 @@ package io.historizr.server.db;
 
 import java.net.InetAddress;
 
+import io.historizr.shared.db.MappingOp;
 import io.vertx.pgclient.data.Inet;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;

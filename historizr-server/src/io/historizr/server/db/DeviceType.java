@@ -1,5 +1,6 @@
 package io.historizr.server.db;
 
+import io.historizr.shared.db.MappingOp;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 

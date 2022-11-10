@@ -1,16 +1,16 @@
 package io.historizr.server.api;
 
-import static io.historizr.server.OpsMisc.sendJson;
-import static io.historizr.server.OpsReq.failed;
-import static io.historizr.server.OpsReq.notFound;
+import static io.historizr.shared.OpsMisc.sendJson;
+import static io.historizr.shared.OpsReq.failed;
+import static io.historizr.shared.OpsReq.notFound;
 
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.historizr.server.OpsMisc;
 import io.historizr.server.db.Db;
-import io.historizr.server.db.MappingOp;
-import io.historizr.server.db.Signal;
+import io.historizr.shared.OpsMisc;
+import io.historizr.shared.db.MappingOp;
+import io.historizr.shared.db.Signal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
 import io.vertx.sqlclient.SqlClient;
@@ -30,7 +30,7 @@ public final class SignalApi {
 	private static final String ROUTE = "/signal";
 
 	public static Router register(EventBus bus, Router router, SqlClient conn) {
-		var toModels = Collectors.mapping(Signal::of, Collectors.toList());
+		var toModels = Collectors.mapping(Signal::ofRow, Collectors.toList());
 		var modelType = Signal.class;
 		router.get(ROUTE).handler(ctx -> {
 			conn.query(Db.Signal.QUERY)

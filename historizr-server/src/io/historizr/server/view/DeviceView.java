@@ -1,21 +1,17 @@
 package io.historizr.server.view;
 
-import static io.historizr.server.OpsReq.failed;
+import static io.historizr.shared.OpsReq.failed;
 
 import java.util.Map;
-import java.util.function.IntFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.historizr.server.OpsMisc;
-import io.historizr.server.OpsReq;
-import io.historizr.server.db.DataType;
 import io.historizr.server.db.Db;
 import io.historizr.server.db.Device;
 import io.historizr.server.db.DeviceType;
+import io.historizr.shared.OpsMisc;
 import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.common.template.TemplateEngine;
