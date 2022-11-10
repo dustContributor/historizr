@@ -3,13 +3,8 @@ html(lang="en")
   head
     title= 'Signals'
   body
-    style. 
-      th, td {
-        border-left: 1px solid;
-        border-bottom: 1px solid;
-        padding: 0.25em;
-      }
-    table 
+    include style.pug
+    table.app-table
       tr
         th='Id'
         th='Device Id'
@@ -23,13 +18,13 @@ html(lang="en")
         th='Revision'
       each item in items
         tr
-          td=item.id()
-          td=item.deviceId()
-          td=item.dataTypeId()
+          td.app-num=item.id()
+          td.app-num=item.deviceId()
+          td.app-num=item.dataTypeId()
           td=dataTypesById.get(item.dataTypeId()).name()
           td=item.name()
           td=item.topic()
-          td=item.deadband()
+          td.app-num=item.deadband()
           td=item.isOnChange()
           td=item.hasFullPayload()
-          td=item.revision()
+          td.app-num=item.revision()

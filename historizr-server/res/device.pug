@@ -3,13 +3,8 @@ html(lang="en")
   head
     title= 'Devices'
   body
-    style. 
-      th, td {
-        border-left: 1px solid;
-        border-bottom: 1px solid;
-        padding: 0.25em;
-      }
-    table 
+    include style.pug
+    table.app-table
       tr
         th='Id'
         th='Type Id'
@@ -19,9 +14,9 @@ html(lang="en")
         th='Port'
       each item in items
         tr
-          td=item.id()
-          td=item.typeId()
+          td.app-num=item.id()
+          td.app-num=item.typeId()
           td=deviceTypesById.get(item.typeId()).name()
           td=item.name()
           td=item.address()
-          td=item.port()
+          td.app-num=item.port()
