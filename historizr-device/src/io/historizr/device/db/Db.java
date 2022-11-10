@@ -22,6 +22,7 @@ public final class Db {
 
 		private static final String TBL = "signal";
 		private static final String[] COL = {
+				"id_device",
 				"id_data_type",
 				"name",
 				"topic",
@@ -36,7 +37,7 @@ public final class Db {
 		public static final String QUERY_BY_ID = QUERY + " where id = $1";
 		public static final String INSERT = sql("""
 				insert into %s(%s)
-				values(?, ?, ?, ?, ?, ?, ?, ?)""", TBL, String.join(",", COL_ALL));
+				values(?, ?, ?, ?, ?, ?, ?, ?, ?)""", TBL, String.join(",", COL_ALL));
 		public static final String UPDATE = sql("""
 				update %s
 				set %s = ?
