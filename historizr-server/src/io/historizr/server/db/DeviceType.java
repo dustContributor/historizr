@@ -9,12 +9,16 @@ public record DeviceType(
 		String name,
 		String description) {
 
-	public static DeviceType of(Row rs) {
+	public static DeviceType ofRow(Row rs) {
 		int i = 0;
 		return new DeviceType(
 				rs.getLong(i++),
 				rs.getString(i++),
 				rs.getString(i++));
+	}
+
+	public static DeviceType of(Row rs) {
+		return ofRow(rs);
 	}
 
 	public final Tuple tuple(MappingOp behavior) {

@@ -8,6 +8,7 @@ import io.historizr.server.api.DeviceTypeApi;
 import io.historizr.server.api.SignalApi;
 import io.historizr.server.tmpl.PugTemplateEngine;
 import io.historizr.server.view.DeviceView;
+import io.historizr.server.view.SignalView;
 import io.historizr.shared.OpsMisc;
 import io.historizr.shared.OpsMisc.PassthroughCodec;
 import io.vertx.core.AbstractVerticle;
@@ -61,6 +62,7 @@ public final class Main extends AbstractVerticle {
 		LOGGER.info("Configured!");
 		LOGGER.info("Configuring HTTP views...");
 		DeviceView.register(vertx, router, tmpl, jdbc);
+		SignalView.register(vertx, router, tmpl, jdbc);
 		LOGGER.info("Configured!");
 		// Signal worker for notifying devices of signal changes
 		LOGGER.info("Deploying signal worker...");

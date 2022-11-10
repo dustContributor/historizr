@@ -1,0 +1,35 @@
+doctype html
+html(lang="en")
+  head
+    title= 'Signals'
+  body
+    style. 
+      th, td {
+        border-left: 1px solid;
+        border-bottom: 1px solid;
+        padding: 0.25em;
+      }
+    table 
+      tr
+        th='Id'
+        th='Device Id'
+        th='Data Type Id'
+        th='Data Type Name'
+        th='Name'
+        th='Topic'
+        th='Deadband'
+        th='On Change'
+        th='Full Payload'
+        th='Revision'
+      each item in items
+        tr
+          td=item.id()
+          td=item.deviceId()
+          td=item.dataTypeId()
+          td=dataTypesById.get(item.dataTypeId()).name()
+          td=item.name()
+          td=item.topic()
+          td=item.deadband()
+          td=item.isOnChange()
+          td=item.hasFullPayload()
+          td=item.revision()

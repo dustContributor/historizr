@@ -30,6 +30,7 @@ public final class Db {
 
 		public static final String QUERY = select(TBL, COL_ALL);
 		public static final String QUERY_BY_ID = QUERY + " where id = $1";
+		public static final String QUERY_BY_DEVICE_ID = QUERY + " where id_device = $1";
 		public static final String INSERT = insert(TBL, COL, COL_ALL);
 		public static final String UPDATE = update(TBL, COL, COL_ALL);
 		public static final String DELETE = delete(TBL, COL_ALL);
