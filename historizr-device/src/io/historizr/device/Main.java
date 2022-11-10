@@ -3,10 +3,11 @@ package io.historizr.device;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.historizr.device.OpsMisc.PassthroughCodec;
 import io.historizr.device.api.DataTypeApi;
 import io.historizr.device.api.DeviceApi;
 import io.historizr.device.api.SignalApi;
+import io.historizr.shared.OpsMisc;
+import io.historizr.shared.OpsMisc.PassthroughCodec;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Launcher;

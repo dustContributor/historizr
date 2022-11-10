@@ -12,9 +12,11 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-import io.historizr.device.db.DataType;
 import io.historizr.device.db.Sample;
-import io.historizr.device.db.Signal;
+import io.historizr.shared.OpsJson;
+import io.historizr.shared.OpsMisc;
+import io.historizr.shared.db.DataType;
+import io.historizr.shared.db.Signal;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 

@@ -1,12 +1,12 @@
 package io.historizr.device.api;
 
-import static io.historizr.device.OpsReq.failed;
-import static io.historizr.device.OpsReq.notFound;
+import static io.historizr.shared.OpsReq.failed;
+import static io.historizr.shared.OpsReq.notFound;
 
 import java.util.HashMap;
 
-import io.historizr.device.OpsMisc;
 import io.historizr.device.db.Db;
+import io.historizr.shared.OpsMisc;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.ext.web.Router;
 import io.vertx.sqlclient.SqlClient;

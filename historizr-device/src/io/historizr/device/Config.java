@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
+import io.historizr.shared.OpsJson;
 import io.vertx.core.json.JsonObject;
 
 public record Config(

@@ -5,7 +5,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.historizr.device.api.SignalApi;
-import io.historizr.device.db.Signal;
+import io.historizr.shared.OpsMisc;
+import io.historizr.shared.db.Signal;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;

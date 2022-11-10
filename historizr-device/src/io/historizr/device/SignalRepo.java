@@ -7,9 +7,10 @@ import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.historizr.device.db.DataType;
 import io.historizr.device.db.Db;
-import io.historizr.device.db.Signal;
+import io.historizr.shared.OpsMisc;
+import io.historizr.shared.db.DataType;
+import io.historizr.shared.db.Signal;
 
 public final class SignalRepo {
 	private static final Logger LOGGER = OpsMisc.classLogger();
