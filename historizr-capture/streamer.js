@@ -137,7 +137,8 @@ for await (const row of readable) {
   }
   const parsedQuality = tryParseQuality(quality)
   if (parsedQuality === null) {
-    continue
+    // Quality is optional
+    parsedQuality = true
   }
   let parsedSignal = null
   const parsedId = tryParseId(id)
@@ -164,8 +165,7 @@ for await (const row of readable) {
   } : {
     v: parsedValue,
     t: parsedTstamp,
-    // Quality is optional
-    q: parsedQuality === null ? true : parsedQuality
+    q: parsedQuality
   }
   let topic = ''
   // No ending topic if there is no signal name present
