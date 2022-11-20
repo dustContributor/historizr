@@ -36,23 +36,38 @@
 					"--allow-all"
 				],
 				"attachSimplePort": 9229
-			}
-		]
-	},
-	"tasks": {
-		"version": "2.0.0",
-		"tasks": [
+			}, 		
 			{
-				"type": "deno",
-				"command": "run",
-				"problemMatcher": [
-					"$deno"
+				"request": "launch",
+				"name": "debug-streamer",
+				"type": "pwa-node",
+				"program": "${workspaceFolder}/streamer.js",
+				"cwd": "${workspaceFolder}",
+				"runtimeExecutable": "deno",
+				"outputCapture": "std",
+				"runtimeArgs": [
+					"run",
+					"--unstable",
+					"--inspect",
+					"--inspect-brk",
+					"--allow-all"
 				],
-				"label": "deno: run",
-				"args": [
-					"--allow-all", 
-					"${workspaceFolder}/main.js"
-				]
+				"attachSimplePort": 9229
+			},
+			{
+				"request": "launch",
+				"name": "run-streamer",
+				"type": "pwa-node",
+				"program": "${workspaceFolder}/streamer.js",
+				"cwd": "${workspaceFolder}",
+				"runtimeExecutable": "deno",
+				"outputCapture": "std",
+				"runtimeArgs": [
+					"run",
+					"--unstable",
+					"--allow-all"
+				],
+				"attachSimplePort": 9229
 			}
 		]
 	}

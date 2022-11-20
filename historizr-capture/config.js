@@ -9,5 +9,16 @@ export const CFG = Object.freeze({
   retainMessage: false,
   cleanSession: true,
   qualityOfService: 1,
-  debug: false
+  debug: false,
+  streamer: Object.freeze({
+    file: 'data.csv',
+    columns: Object.freeze({
+      id: 'id',
+      prefix: '',
+      name: '',
+      quality: 'quality',
+      tstamp: 'tstamp',
+      value: 'value'
+    })
+  })
 });
