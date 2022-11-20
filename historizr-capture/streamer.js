@@ -167,9 +167,10 @@ for await (const row of readable) {
     t: parsedTstamp,
     q: parsedQuality
   }
-  let topic = ''
-  // No ending topic if there is no signal name present
-  if (parsedSignal !== null) {
+  let topic = null
+  if (parsedSignal === null) {
+    topic = parsedId.toString()
+  } else {
     topic = topicsBySignal[parsedSignal]
     if (!topic) {
       topic = toTopic(parsedSignal)
