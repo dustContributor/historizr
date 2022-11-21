@@ -12,6 +12,7 @@ export const CFG = Object.freeze({
   debug: false,
   streamer: Object.freeze({
     file: 'data.csv',
+    publishLimit: 0,
     columns: Object.freeze({
       id: 'id',
       prefix: '',

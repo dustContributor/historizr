@@ -1,5 +1,4 @@
 import { CsvStream } from 'https://deno.land/std@0.165.0/encoding/csv/stream.ts';
-import * as utils from './utils.js'
 import * as log from './log.js'
 import { CFG } from './config.js'
 import { Broker } from './broker.js'
@@ -94,6 +93,7 @@ const toTopic = v =>
     .replaceAll('__', '_')
     .toLowerCase();
 
+const pubLimit = CFG.streamer.publishLimit || 0;
 const topicsBySignal = {};
 
 let count = 0
@@ -179,6 +179,10 @@ for await (const row of readable) {
   }
   await client.publish(topic, JSON.stringify(payload))
   ++count
+  if(pubLimit > 0 && count >= pubLimit) {
+    // Reached max publications
+    break
+  }
   if (count % 100000 == 0) {
     printStats(startTstamp, count)
   }
