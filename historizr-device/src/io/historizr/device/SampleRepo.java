@@ -26,7 +26,8 @@ public final class SampleRepo implements AutoCloseable {
 	private final Config cfg;
 	private final Vertx vertx;
 	private final ConcurrentHashMap<Long, Sample> samplesById = new ConcurrentHashMap<>();
-	private MqttClient client;
+	private MqttClient publisherClient;
+	private MqttClient subscriberClient;
 	private SignalRepo signalRepo;
 	private long receivedCount;
 	private long processedCount;
@@ -42,13 +43,20 @@ public final class SampleRepo implements AutoCloseable {
 		LOGGER.info("Initializing...");
 		this.signalRepo = Objects.requireNonNull(signalRepo);
 		var clientId = makeClientId();
-		LOGGER.info("MQTT client id: " + clientId);
-		client = new MqttClient(cfg.broker(), clientId);
-		LOGGER.info("Connecting to broker...");
-		client.connect();
-		LOGGER.info("Connected!");
+		publisherClient = connectClient(clientId, "pub");
+		subscriberClient = connectClient(clientId, "sub");
 		LOGGER.info("Initialized!");
 		return this;
+	}
+
+	private final MqttClient connectClient(String baseId, String sufix) throws MqttException {
+		var clientId = baseId + '_' + sufix;
+		LOGGER.info("Creating MQTT " + sufix + " client");
+		var client = new MqttClient(cfg.broker(), clientId, null);
+		LOGGER.info("Connecting to broker with client id " + clientId + "...");
+		client.connect();
+		LOGGER.info("Connected!");
+		return client;
 	}
 
 	private final String makeClientId() {
@@ -58,8 +66,11 @@ public final class SampleRepo implements AutoCloseable {
 	@Override
 	public final void close() throws Exception {
 		LOGGER.info("Closing...");
-		if (client != null) {
-			client.close();
+		if (publisherClient != null) {
+			publisherClient.close();
+		}
+		if (subscriberClient != null) {
+			subscriberClient.close();
 		}
 		LOGGER.info("Closed!");
 	}
@@ -183,7 +194,7 @@ public final class SampleRepo implements AutoCloseable {
 		var outTopic = cfg.outputTopic() + signal.name();
 		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
 		// Cant publish from the method that handles the subscription event.
-		vertx.runOnContext(new DeferredPublish(client, outTopic, outMsg));
+		vertx.runOnContext(new DeferredPublish(publisherClient, outTopic, outMsg));
 		++publishedCount;
 	}
 
@@ -205,7 +216,7 @@ public final class SampleRepo implements AutoCloseable {
 	private final void subscribe(String topic, IMqttMessageListener handler) {
 		try {
 			LOGGER.info("Subscribing to " + topic);
-			client.subscribe(topic, handler);
+			subscriberClient.subscribe(topic, handler);
 			LOGGER.info("Subscribed!");
 		} catch (MqttException e) {
 			throw new RuntimeException(e);
