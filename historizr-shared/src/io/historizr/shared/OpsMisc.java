@@ -55,6 +55,21 @@ public final class OpsMisc {
 		}
 	}
 
+	public static long parseLongOrDefault(String v, long def) {
+		if (v == null || v.isEmpty()) {
+			return def;
+		}
+		try {
+			return Long.parseLong(v);
+		} catch (NumberFormatException e) {
+			return def;
+		}
+	}
+
+	public static long parseLongOrDefault(String v) {
+		return parseLongOrDefault(v, 0);
+	}
+
 	public static <T, I extends Iterable<T>> Stream<T> stream(AsyncResult<I> res) {
 		return stream(res, false);
 	}
