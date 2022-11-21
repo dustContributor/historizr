@@ -5,6 +5,7 @@ import java.time.ZoneOffset;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -30,6 +31,7 @@ public final class SampleRepo implements AutoCloseable {
 	private long receivedCount;
 	private long processedCount;
 	private long skippedCount;
+	private long publishedCount;
 
 	public SampleRepo(Config cfg, Vertx vertx) {
 		this.cfg = Objects.requireNonNull(cfg);
@@ -93,10 +95,14 @@ public final class SampleRepo implements AutoCloseable {
 		default -> null;
 		};
 		try {
-			return OpsJson.fromBytes(payload, type);
+			var obj = OpsJson.fromBytes(payload, type);
+			if (obj != null && obj.isValid()) {
+				return obj;
+			}
 		} catch (Exception ex) {
-			return null;
+			LOGGER.log(Level.FINEST, "Failed reading full payload", ex);
 		}
+		return null;
 	}
 
 	private static final Sample simplePayload(DataType.Catalog dataType, String payload, OffsetDateTime tstamp) {
@@ -141,7 +147,7 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	private final void handleMessage(String topic, MqttMessage msg) {
-		receivedCount = receivedCount() + 1;
+		++receivedCount;
 		LOGGER.fine(() -> "Incoming message:topic: " + msg + ":" + topic);
 		var signal = signalRepo.signalByTopic(topic);
 		if (signal == null) {
@@ -163,12 +169,12 @@ public final class SampleRepo implements AutoCloseable {
 			// Unrecognized mapped data type. Shouldn't happen.
 			return;
 		}
-		processedCount += 1;
+		++processedCount;
 		var oid = Long.valueOf(signal.id());
 		var changed = samplesById.compute(oid, (key, existing) -> evaluateChange(signal, sample, existing));
 		if (sample != changed) {
 			// Existing sample didn't get updated, wont emit.
-			skippedCount += 1;
+			++skippedCount;
 			return;
 		}
 		// Encode and send via mqtt.
@@ -178,6 +184,7 @@ public final class SampleRepo implements AutoCloseable {
 		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
 		// Cant publish from the method that handles the subscription event.
 		vertx.runOnContext(new DeferredPublish(client, outTopic, outMsg));
+		++publishedCount;
 	}
 
 	public final void removeSample(long id) {
@@ -215,5 +222,9 @@ public final class SampleRepo implements AutoCloseable {
 
 	public final long skippedCount() {
 		return skippedCount;
+	}
+
+	public final long publishedCount() {
+		return publishedCount;
 	}
 }

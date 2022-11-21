@@ -3,21 +3,32 @@ package io.historizr.device.db;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 import io.historizr.shared.OpsMisc;
 
 public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample.OfFloat, Sample.OfDouble, Sample.OfString {
 	public final long id;
+	@JsonAlias("t")
 	public final OffsetDateTime tstamp;
+	@JsonAlias("q")
 	public final boolean quality;
+
+	Sample() {
+		this.id = 0;
+		this.tstamp = null;
+		this.quality = false;
+	}
 
 	Sample(long id, OffsetDateTime tstamp, boolean quality) {
 		super();
 		this.id = id;
-		this.tstamp = Objects.requireNonNull(tstamp);
+		this.tstamp = tstamp;
 		this.quality = quality;
+	}
+
+	public boolean isValid() {
+		return tstamp != null;
 	}
 
 	public static final double DEADBAND_SCALE = 1.0 / 1000.0;
@@ -60,16 +71,20 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 		private static final String BOOL_NUM_TRUE = "1";
 		private static final String BOOL_LBL_FALSE = "false";
 		private static final String BOOL_LBL_TRUE = "true";
+
+		@JsonAlias("v")
 		public final boolean value;
+
+		public OfBool() {
+			this.value = false;
+		}
 
 		public OfBool(long id, OffsetDateTime tstamp, boolean quality, boolean value) {
 			super(id, tstamp, quality);
 			this.value = value;
 		}
 
-		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-		public OfBool(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
-				@JsonProperty("v") boolean value) {
+		public OfBool(OffsetDateTime tstamp, boolean quality, boolean value) {
 			this(0, tstamp, quality, value);
 		}
 
@@ -118,16 +133,19 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	}
 
 	public static final class OfFloat extends Sample {
+		@JsonAlias("v")
 		public final float value;
+
+		public OfFloat() {
+			this.value = 0;
+		}
 
 		public OfFloat(long id, OffsetDateTime tstamp, boolean quality, float value) {
 			super(id, tstamp, quality);
 			this.value = value;
 		}
 
-		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-		public OfFloat(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
-				@JsonProperty("v") float value) {
+		public OfFloat(OffsetDateTime tstamp, boolean quality, float value) {
 			this(0, tstamp, quality, value);
 		}
 
@@ -164,16 +182,19 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	}
 
 	public static final class OfDouble extends Sample {
+		@JsonAlias("v")
 		public final double value;
+
+		public OfDouble() {
+			this.value = 0;
+		}
 
 		public OfDouble(long id, OffsetDateTime tstamp, boolean quality, double value) {
 			super(id, tstamp, quality);
 			this.value = value;
 		}
 
-		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-		public OfDouble(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
-				@JsonProperty("v") double value) {
+		public OfDouble(OffsetDateTime tstamp, boolean quality, double value) {
 			this(0, tstamp, quality, value);
 		}
 
@@ -210,17 +231,16 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	}
 
 	public static final class OfLong extends Sample {
+		@JsonAlias("v")
 		public final long value;
+
+		public OfLong() {
+			this.value = 0;
+		}
 
 		public OfLong(long id, OffsetDateTime tstamp, boolean quality, long value) {
 			super(id, tstamp, quality);
 			this.value = value;
-		}
-
-		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-		public OfLong(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
-				@JsonProperty("v") long value) {
-			this(0, tstamp, quality, value);
 		}
 
 		public static OfLong of(String v, OffsetDateTime t) {
@@ -232,12 +252,12 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 			if (!OpsMisc.isNullOrEmpty(v)) {
 				try {
 					var tmp = Long.parseLong(v);
-					return new OfLong(t, q, tmp);
+					return new OfLong(0, t, q, tmp);
 				} catch (NumberFormatException e) {
 					// Skip.
 				}
 			}
-			return new OfLong(t, false, 0);
+			return new OfLong(0, t, false, 0);
 		}
 
 		@Override
@@ -257,16 +277,24 @@ public abstract sealed class Sample permits Sample.OfBool, Sample.OfLong, Sample
 	}
 
 	public static final class OfString extends Sample {
+		@JsonAlias("v")
 		public final String value;
+
+		public OfString() {
+			this.value = null;
+		}
+
+		@Override
+		public boolean isValid() {
+			return super.isValid() && value != null;
+		}
 
 		public OfString(long id, OffsetDateTime tstamp, boolean quality, String value) {
 			super(id, tstamp, quality);
 			this.value = value;
 		}
 
-		@JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-		public OfString(@JsonProperty("t") OffsetDateTime tstamp, @JsonProperty("q") boolean quality,
-				@JsonProperty("v") String value) {
+		public OfString(OffsetDateTime tstamp, boolean quality, String value) {
 			this(0, tstamp, quality, value);
 		}
 
