@@ -10,6 +10,7 @@ import io.historizr.shared.OpsMisc;
 import io.historizr.shared.OpsMisc.PassthroughCodec;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Launcher;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -29,13 +30,21 @@ public final class Main extends AbstractVerticle {
 			var jdbc = JDBCPool.pool(vertx, new H2Provider().config("cfg", cfg));
 			LOGGER.info("Created!");
 			LOGGER.info("Deploying sample worker...");
+			SampleWorker sampleWorker = null;
+			Future<String> deployedWorker = Future.succeededFuture();
 			if (cfg.noSampling()) {
-				LOGGER.info("Sampling worker DISABLED");
+				LOGGER.info("Sample worker DISABLED");
 			} else {
-				vertx.deployVerticle(SampleWorker::new, new DeploymentOptions()
+				sampleWorker = new SampleWorker();
+				deployedWorker = vertx.deployVerticle(sampleWorker, new DeploymentOptions()
 						.setWorker(true)
-						.setConfig(cfg.toJson()));
-				LOGGER.info("Deployed!");
+						.setConfig(cfg.toJson()))
+						.onFailure(ex -> {
+							LOGGER.log(Level.SEVERE, "Failed starting the sample worker", (Throwable) ex);
+							vertx.close();
+						}).onSuccess(e -> {
+							LOGGER.info("Deployed sample worker!");
+						});
 			}
 			LOGGER.info("Configuring HTTP api...");
 			// Web router.
@@ -45,22 +54,29 @@ public final class Main extends AbstractVerticle {
 			// Capture data passed as the body of requests.
 			router.route().handler(BodyHandler.create(false));
 			// Register api endpoints.
-			SignalApi.register(vertx.eventBus(), router, jdbc);
-			DataTypeApi.register(vertx.eventBus(), router, jdbc);
-			DeviceApi.register(vertx.eventBus(), router, jdbc);
-			LOGGER.info("Configured!");
+			SignalApi.register(vertx, router, jdbc);
+			DataTypeApi.register(vertx, router, jdbc);
+			DeviceApi.register(vertx, router, jdbc, sampleWorker);
+			LOGGER.info("Configured the HTTP api!");
 			LOGGER.info("Creating HTTP server...");
 			// Create the HTTP server
 			if (cfg.noHttpApi()) {
 				LOGGER.info("HTTP api DISABLED");
 			} else {
-				vertx.createHttpServer()
-						// Handle every request using the router
-						.requestHandler(router)
-						// Start listening
-						.listen(cfg.apiPort())
-						// Print the port
-						.onSuccess(server -> LOGGER.info("HTTP server created on port " + server.actualPort() + "!"));
+				deployedWorker.onSuccess(e -> {
+					vertx.createHttpServer()
+							// Handle every request using the router
+							.requestHandler(router)
+							// Start listening
+							.listen(cfg.apiPort())
+							// Print the port
+							.onSuccess(
+									server -> LOGGER.info("HTTP server created on port " + server.actualPort() + "!"))
+							.onFailure(ex -> {
+								LOGGER.log(Level.SEVERE, "Failed starting the HTTP server", (Throwable) ex);
+								vertx.close();
+							});
+				});
 			}
 			LOGGER.info("Started!");
 		} catch (Exception e) {

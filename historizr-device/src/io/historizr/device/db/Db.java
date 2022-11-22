@@ -12,7 +12,13 @@ public final class Db {
 			throw new RuntimeException();
 		}
 
-		public static final String REVISION_SUM = "select sum(revision) from signal";
+		public static final String DEVICE_STATS = "select "
+				+ "sum(revision)"
+				+ ", count(*)"
+				+ ", sum(is_on_change::int4)"
+				+ ", sum((deadband > 0)::int4)"
+				+ ", sum(has_full_payload::int4)"
+				+ " from signal";
 	}
 
 	public static final class Signal {

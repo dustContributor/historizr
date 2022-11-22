@@ -24,6 +24,14 @@ public final class SampleWorker extends AbstractVerticle {
 		return bus.<JsonObject>consumer(event).handler(e -> handler.accept(e.body().mapTo(Signal.class)));
 	}
 
+	public final SignalRepo signalRepo() {
+		return signalRepo;
+	}
+
+	public final SampleRepo sampleRepo() {
+		return sampleRepo;
+	}
+
 	@Override
 	public final void start() throws Exception {
 		LOGGER.info("Starting...");

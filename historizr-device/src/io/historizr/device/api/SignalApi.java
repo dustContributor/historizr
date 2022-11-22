@@ -11,7 +11,7 @@ import io.historizr.device.db.Db;
 import io.historizr.shared.OpsMisc;
 import io.historizr.shared.db.MappingOp;
 import io.historizr.shared.db.Signal;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import io.vertx.sqlclient.SqlClient;
 import io.vertx.sqlclient.Tuple;
@@ -29,7 +29,8 @@ public final class SignalApi {
 
 	private static final String ROUTE = "/signal";
 
-	public static Router register(EventBus bus, Router router, SqlClient conn) {
+	public static Router register(Vertx vertx, Router router, SqlClient conn) {
+		var bus = vertx.eventBus();
 		var toModels = Collectors.mapping(Signal::ofRow, Collectors.toList());
 		var modelType = Signal.class;
 		router.get(ROUTE).handler(ctx -> {
