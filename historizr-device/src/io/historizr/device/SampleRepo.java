@@ -181,6 +181,10 @@ public final class SampleRepo implements AutoCloseable {
 		samplesById.remove(oid);
 	}
 
+	public final void discardSampleState() {
+		samplesById.clear();
+	}
+
 	public final void subscribe() {
 		subscribe(cfg.inputTopic(), this::handleMessage);
 	}

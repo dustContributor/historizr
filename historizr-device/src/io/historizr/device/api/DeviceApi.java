@@ -1,6 +1,7 @@
 package io.historizr.device.api;
 
 import static io.historizr.shared.OpsReq.failed;
+import static io.historizr.shared.OpsReq.ok;
 
 import java.util.HashMap;
 
@@ -17,6 +18,9 @@ public final class DeviceApi {
 	}
 
 	private static final String ROUTE = "/device";
+	private static final String EVENT_ROOT = OpsMisc.className();
+
+	public static final String EVENT_DISCARD_SAMPLE_STATE = EVENT_ROOT + ".discard_sample_state";
 
 	public static Router register(Vertx vertx, Router router, SqlClient conn, SampleWorker sampleWorker) {
 		router.get(ROUTE).handler(ctx -> {
@@ -51,6 +55,10 @@ public final class DeviceApi {
 						}
 						ctx.json(res);
 					});
+		});
+		router.post(ROUTE + "/discardsamplestate").handler(ctx -> {
+			vertx.eventBus().publish(EVENT_DISCARD_SAMPLE_STATE, EVENT_DISCARD_SAMPLE_STATE);
+			ok(ctx);
 		});
 		return router;
 	}

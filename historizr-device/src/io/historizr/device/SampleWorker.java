@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.historizr.device.api.DeviceApi;
 import io.historizr.device.api.SignalApi;
 import io.historizr.shared.OpsMisc;
 import io.historizr.shared.db.Signal;
@@ -19,6 +20,7 @@ public final class SampleWorker extends AbstractVerticle {
 	private MessageConsumer<JsonObject> inserted;
 	private MessageConsumer<JsonObject> updated;
 	private MessageConsumer<JsonObject> deleted;
+	private MessageConsumer<Object> discardSampleState;
 
 	private static MessageConsumer<JsonObject> handle(EventBus bus, String event, Consumer<Signal> handler) {
 		return bus.<JsonObject>consumer(event).handler(e -> handler.accept(e.body().mapTo(Signal.class)));
@@ -59,6 +61,10 @@ public final class SampleWorker extends AbstractVerticle {
 				sampleRepo.removeSample(e.id());
 				LOGGER.fine(() -> "Deleted " + e);
 			});
+			discardSampleState = bus.consumer(DeviceApi.EVENT_DISCARD_SAMPLE_STATE).handler(e -> {
+				sampleRepo.discardSampleState();
+				LOGGER.fine(() -> "Discarded sample state");
+			});
 			LOGGER.info("Started!");
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Failed to start", e);
@@ -72,6 +78,7 @@ public final class SampleWorker extends AbstractVerticle {
 		inserted.unregister().wait();
 		updated.unregister().wait();
 		deleted.unregister().wait();
+		discardSampleState.unregister().wait();
 		try (var sampleRepo = this.sampleRepo) {
 			// Close.
 		}
