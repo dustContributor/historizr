@@ -16,7 +16,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import io.historizr.device.db.Sample;
 import io.historizr.shared.OpsJson;
 import io.historizr.shared.OpsMisc;
-import io.historizr.shared.db.DataType;
 import io.historizr.shared.db.Signal;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -87,44 +86,23 @@ public final class SampleRepo implements AutoCloseable {
 		}
 	}
 
-	private static final Sample sampleOf(DataType.Catalog dataType, MqttMessage msg, boolean hasFullPayload) {
-		if (dataType == null || dataType == DataType.Catalog.UNKNOWN) {
+	private static final Sample sampleOf(DataTypeMapper mapper, MqttMessage msg, boolean hasFullPayload) {
+		if (mapper == null) {
 			// Avoid parsing payload if the type is unknown.
 			return null;
 		}
-		return hasFullPayload ? fullPayload(dataType, msg.getPayload())
-				: simplePayload(dataType, msg.toString(), now());
-	}
-
-	private static final Sample fullPayload(DataType.Catalog dataType, byte[] payload) {
-		var type = switch (dataType) {
-		case BOOL -> Sample.OfBool.class;
-		case F32 -> Sample.OfFloat.class;
-		case F64 -> Sample.OfDouble.class;
-		case I64 -> Sample.OfLong.class;
-		case STR -> Sample.OfString.class;
-		default -> null;
-		};
-		try {
-			var obj = OpsJson.fromBytes(payload, type);
-			if (obj != null && obj.isValid()) {
-				return obj;
+		if (hasFullPayload) {
+			try {
+				var obj = OpsJson.fromBytes(msg.getPayload(), mapper.sampleType());
+				if (obj != null && obj.isValid()) {
+					return obj;
+				}
+			} catch (Exception ex) {
+				LOGGER.log(Level.FINEST, "Failed reading full payload", ex);
 			}
-		} catch (Exception ex) {
-			LOGGER.log(Level.FINEST, "Failed reading full payload", ex);
+			return null;
 		}
-		return null;
-	}
-
-	private static final Sample simplePayload(DataType.Catalog dataType, String payload, OffsetDateTime tstamp) {
-		return switch (dataType) {
-		case BOOL -> Sample.OfBool.of(payload, tstamp);
-		case F32 -> Sample.OfFloat.of(payload, tstamp);
-		case F64 -> Sample.OfDouble.of(payload, tstamp);
-		case I64 -> Sample.OfLong.of(payload, tstamp);
-		case STR -> Sample.OfString.of(payload, tstamp);
-		default -> null;
-		};
+		return mapper.toSample().apply(msg.toString(), now());
 	}
 
 	private static final Sample evaluateChange(Signal signal, Sample current, Sample previous) {
@@ -172,11 +150,11 @@ public final class SampleRepo implements AutoCloseable {
 			LOGGER.fine(() -> "Unrecognized data type for signal: " + signal);
 			return;
 		}
-		var mappedType = DataType.Catalog.of(dataType.mappingId());
-		var sample = sampleOf(mappedType, msg, signal.hasFullPayload());
+		var dataTypeMapper = DataTypeMapper.ofId(dataType.mappingId());
+		var sample = sampleOf(dataTypeMapper, msg, signal.hasFullPayload());
 		if (sample == null) {
 			LOGGER.fine(() -> "Unrecognized mapped data type for signal: " + signal + ", data type: "
-					+ dataType + ", mapped to: " + mappedType);
+					+ dataType + ", mapped to: " + dataTypeMapper);
 			// Unrecognized mapped data type. Shouldn't happen.
 			return;
 		}
