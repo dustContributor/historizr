@@ -62,9 +62,9 @@ await runAndWait(['deno', 'run', '--allow-all',
   CFG.streamer.publishLimit])
 log.info('Ran sample process!')
 
-for (let storedSamples = 0; storedSamples <= CFG.streamer.publishLimit;) {
+for (let storedSamples = 0; storedSamples < CFG.streamer.publishLimit;) {
   if (storedSamples > 0) {
-    log.info('Historized ' + storedSamples + ' samples so far...')
+    log.info('Historized ' + storedSamples + ' of ' + CFG.streamer.publishLimit + ' samples')
   } else {
     log.info('Checking sample historization...')
   }
