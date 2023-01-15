@@ -2,6 +2,7 @@ import { CsvStream } from 'https://deno.land/std@0.165.0/encoding/csv/stream.ts'
 import * as log from './log.js'
 import { CFG } from './config.js'
 import { Broker } from './broker.js'
+import { matchOn } from './utils.js'
 
 if (!CFG.streamer) {
   throw 'streamer config missing!'
@@ -9,6 +10,9 @@ if (!CFG.streamer) {
 
 log.info('opening file...')
 const file = await Deno.open(Deno.args[0] || CFG.streamer.file);
+const pubLimit = matchOn(Number.parseInt(Deno.args[1]), 
+  Number.isNaN, 0, 
+  v => v) || CFG.streamer.publishLimit || 0
 const readable = file.readable
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(new CsvStream());
@@ -93,7 +97,6 @@ const toTopic = v =>
     .replaceAll('__', '_')
     .toLowerCase();
 
-const pubLimit = CFG.streamer.publishLimit || 0;
 const topicsBySignal = {};
 
 let count = 0

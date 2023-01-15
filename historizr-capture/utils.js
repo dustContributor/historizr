@@ -86,3 +86,30 @@ export const sanitizeMemName = v => {
     .toLowerCase()
   return trimChar(str, '_')
 }
+
+/* Poor man's match expression */
+export const matchOn = (v, ...branches) => {
+  if (branches.length < 1) {
+    throw 'no branches passed'
+  }
+  for (let i = 0; i < branches.length; i += 2) {
+    const ev = branches[i]
+    const use = branches[i + 1]
+    switch (typeof ev) {
+      case 'boolean':
+        if (ev) {
+          return branches[i + 1]
+        }
+        continue
+      case 'function':
+        if (ev(v)) {
+          return use(v)
+        }
+        continue
+      default:
+        continue
+    }
+  }
+  const last = branches[branches.length - 1];
+  return typeof last == 'function' ? last(v) : last
+}
