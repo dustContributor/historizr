@@ -92,7 +92,9 @@ export const matchOn = (v, ...branches) => {
   if (branches.length < 1) {
     throw 'no branches passed'
   }
-  for (let i = 0; i < branches.length; i += 2) {
+  // Skip processing the last arg if odd length
+  const len = branches.length & ~1
+  for (let i = 0; i < len; i += 2) {
     const ev = branches[i]
     const use = branches[i + 1]
     switch (typeof ev) {
@@ -110,6 +112,7 @@ export const matchOn = (v, ...branches) => {
         continue
     }
   }
+  // Last arg should be at the odd index, default case
   const last = branches[branches.length - 1];
   return typeof last == 'function' ? last(v) : last
 }
