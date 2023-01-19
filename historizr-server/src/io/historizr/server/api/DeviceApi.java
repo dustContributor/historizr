@@ -34,27 +34,37 @@ public final class DeviceApi {
 
 	private static final String ROUTE = "/device";
 
-	record DeviceRevision(Device device, long revision) {
-		public static DeviceRevision of(Row r) {
-			return new DeviceRevision(Device.of(r), r.getLong(r.size() - 1));
+	record ServerRevision(Device device, long revision) {
+		public static ServerRevision of(Row r) {
+			return new ServerRevision(Device.of(r), r.getLong(r.size() - 1));
 		}
 	}
 
-	record RevisionResult(long revision, String host) {
+	record DeviceRevision(
+			String host,
+			long signalsRevision,
+			long signalsTotal,
+			long signalsWithOnChange,
+			long signalsWithDeadband,
+			long signalsWithFullPayload,
+			long messagesReceived,
+			long messagesProcessed,
+			long messagesSkipped,
+			long messagesPublished) {
 	}
 
 	public static Router register(Vertx vertx, Router router, SqlClient conn) {
 		var bus = vertx.eventBus();
 		var toModels = Collectors.mapping(Device::of, Collectors.toList());
 		var modelType = Device.class;
-		var toRevisions = Collectors.mapping(DeviceRevision::of, Collectors.toList());
+		var toRevisions = Collectors.mapping(ServerRevision::of, Collectors.toList());
 		var client = WebClient.create(vertx);
 		router.post(ROUTE + "/verify").handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
 			@SuppressWarnings("unused")
 			var tmp = new Object() {
-				public DeviceRevision deviceRevision;
-				public RevisionResult revisionResult;
+				public ServerRevision server;
+				public DeviceRevision device;
 			};
 			conn.preparedQuery(Db.Misc.REVISION_TOTAL)
 					.collecting(toRevisions)
@@ -64,16 +74,16 @@ public final class DeviceApi {
 						if (notFound(rows, ctx)) {
 							return Future.succeededFuture();
 						}
-						tmp.deviceRevision = rows.get(0);
-						var device = tmp.deviceRevision.device();
+						tmp.server = rows.get(0);
+						var device = tmp.server.device();
 						return client.get(device.port(), device.address().getHostAddress(), SignalWorker.API_DEVICE)
 								.send();
 					}).onSuccess(r -> {
-						if (tmp.deviceRevision == null) {
+						if (tmp.server == null) {
 							// Couldn't find device
 							return;
 						}
-						tmp.revisionResult = r.bodyAsJson(RevisionResult.class);
+						tmp.device = r.bodyAsJson(DeviceRevision.class);
 						ctx.json(tmp);
 					}).onFailure(r -> {
 						var msg = "Failed to query revision sum";
