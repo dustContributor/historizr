@@ -11,16 +11,23 @@ const onDatabase = async op => {
     database: CFG.db.database,
     user: CFG.db.user,
     password: CFG.db.pass,
-    port: CFG.db.port
+    port: CFG.db.port,
+    tls: {
+      enabled: false
+    }
   })
   await client.connect()
-  await op(client)
+  const res = await op(client)
   await client.end()
+  return res
 }
 
 const runAndWait = async procArgs => {
+  log.info(`Running command: ${procArgs.join(' ')}`)
   const proc = Deno.run({
-    cmd: procArgs
+    cmd: procArgs,
+    stderr: 'piped',
+    stdout: 'piped'
   })
   const [status, stdout, stderr] = await Promise.all([
     proc.status(),
@@ -37,6 +44,7 @@ const runAndWait = async procArgs => {
   if (out) {
     log.error(out)
   }
+  return status.success
 }
 
 log.info('Truncating sample table...')
@@ -48,41 +56,63 @@ log.info('Truncated!')
 log.info('Moving old timing row...')
 await onDatabase(async client =>
   await client.queryObject(`
-  with maxid as (select max(id) + 1 as id from historizr.timing)
   update historizr.timing
-  set id = maxid.id
+  set id = (select max(id) as id from historizr.timing) + 1
   where id = 1`)
 )
 log.info('Moved!')
 
+log.info('Resetting the device state...')
+const deviceReset = await fetch(CFG.device.host + CFG.device.resetEndpoint, {
+  method: 'POST'
+})
+if (deviceReset.status != 200) {
+  const text = await deviceReset.text()
+  log.error('Failed resetting the device state!')
+  log.error(text)
+  Deno.exit(1)
+}
+log.info('Device state reset!')
+
+
 log.info('Running sample process...')
-await runAndWait(['deno', 'run', '--allow-all',
+const streamerStatus = await runAndWait(['deno', 'run', '--allow-all',
   CFG.streamer.path,
   CFG.streamer.file,
   CFG.streamer.publishLimit])
 log.info('Ran sample process!')
+if (!streamerStatus) {
+  Deno.exit(1)
+}
+let storedSamples = 0
 
-for (let storedSamples = 0; storedSamples < CFG.streamer.publishLimit;) {
+while (storedSamples < CFG.streamer.publishLimit) {
   if (storedSamples > 0) {
     log.info('Historized ' + storedSamples + ' of ' + CFG.streamer.publishLimit + ' samples')
   } else {
     log.info('Checking sample historization...')
   }
-  await sleep(1000)
-  const res = await client.queryObject(`select * from historizr.timing where id = 1`)
-  storedSamples = res.counter
+  await sleep(1)
+  const res = await onDatabase(async client =>
+    await client.queryObject(`select * from historizr.timing where id = 1`)
+  )
+  if (!res || res.rowCount < 1) {
+    // timing row hasn't been generated yet
+    continue
+  }
+  storedSamples = res.rows[0].counter
 }
 log.info('Finished historization of ' + storedSamples + ' samples!')
 
 log.info('Moving new timing row...')
 await onDatabase(async client =>
-  await client.queryObject(`
-  with maxid as (select max(id) + 1 as id from historizr.timing)
+  await client.queryArray`
   update historizr.timing
-  set 
-    id = maxid.id,
-    desc = $1
-  where id = 1`, [storedSamples + ' samples'])
+  set id = (select max(id) as id from historizr.timing) + 1, 
+  description = ${storedSamples + ' samples'}
+  where id = 1`
 )
 log.info('Moved!')
+
+log.info('Benchmark is finished!')
 Deno.exit()
