@@ -74,7 +74,6 @@ if (deviceReset.status != 200) {
 }
 log.info('Device state reset!')
 
-
 log.info('Running sample process...')
 const streamerStatus = await runAndWait(['deno', 'run', '--allow-all',
   CFG.streamer.path,
@@ -85,7 +84,7 @@ if (!streamerStatus) {
   Deno.exit(1)
 }
 let storedSamples = 0
-
+let waited = 0;
 while (storedSamples < CFG.streamer.publishLimit) {
   if (storedSamples > 0) {
     log.info('Historized ' + storedSamples + ' of ' + CFG.streamer.publishLimit + ' samples')
@@ -100,7 +99,13 @@ while (storedSamples < CFG.streamer.publishLimit) {
     // timing row hasn't been generated yet
     continue
   }
-  storedSamples = res.rows[0].counter
+  const sampleCount = res.rows[0].counter
+  if (++waited > 60 && (sampleCount == storedSamples)) {
+    // something happened, sample count didnt change and we took too long
+    log.warning('Took too long to historize new samples, skipping...')
+    break
+  }
+  storedSamples = sampleCount
 }
 log.info('Finished historization of ' + storedSamples + ' samples!')
 
