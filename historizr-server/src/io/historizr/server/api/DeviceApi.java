@@ -47,6 +47,7 @@ public final class DeviceApi {
 			long signalsWithOnChange,
 			long signalsWithDeadband,
 			long signalsWithFullPayload,
+			long messagesRegistered,
 			long messagesReceived,
 			long messagesProcessed,
 			long messagesSkipped,
