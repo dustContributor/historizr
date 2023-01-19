@@ -205,6 +205,10 @@ public final class SampleRepo implements AutoCloseable {
 		}
 	}
 
+	public final long registeredCount() {
+		return samplesById.size();
+	}
+
 	public final long receivedCount() {
 		return receivedCount;
 	}

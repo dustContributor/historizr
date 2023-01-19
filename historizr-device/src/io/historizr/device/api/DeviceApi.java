@@ -48,6 +48,7 @@ public final class DeviceApi {
 						}
 						if (sampleWorker != null) {
 							var sample = sampleWorker.sampleRepo();
+							res.put("messagesRegistered", sample.registeredCount());
 							res.put("messagesReceived", sample.receivedCount());
 							res.put("messagesProcessed", sample.processedCount());
 							res.put("messagesSkipped", sample.skippedCount());
