@@ -83,38 +83,47 @@ log.info('Ran sample process!')
 if (!streamerStatus) {
   Deno.exit(1)
 }
+const pubLimit = CFG.streamer.publishLimit
 let storedSamples = 0
-let waited = 0;
-while (storedSamples < CFG.streamer.publishLimit) {
-  if (storedSamples > 0) {
-    log.info('Historized ' + storedSamples + ' of ' + CFG.streamer.publishLimit + ' samples')
-  } else {
-    log.info('Checking sample historization...')
-  }
+let totalSeconds = 0
+let msgsps = 0
+let waited = 0
+const genStats = () => `${storedSamples}/${pubLimit} samples, `
+  + `${(storedSamples / pubLimit * 100.0).toFixed(3)}%, `
+  + `${msgsps.toFixed(3)}msg/s, `
+  + `${totalSeconds.toFixed(3)}s `;
+log.info('Checking sample historization...')
+while (storedSamples < pubLimit) {
+  log.info(genStats())
   await sleep(1)
   const res = await onDatabase(async client =>
-    await client.queryObject(`select * from historizr.timing where id = 1`)
+    await client.queryObject(`select * from historizr.timing_stats where id = 1`)
   )
-  if (!res || res.rowCount < 1) {
-    // timing row hasn't been generated yet
-    continue
+  const [timing] = res.rows
+  msgsps = Number.parseFloat(timing?.msgps) || 0
+  totalSeconds = Number.parseFloat(timing?.total_seconds) || 0
+  const timingCounter = Number.parseInt(timing?.counter) || 0
+  if (timingCounter == storedSamples) {
+    if (++waited > 60) {
+      // something happened, sample count didnt change and we took too long
+      log.warning('Took too long to historize new samples, skipping...')
+      break
+    }
+  } else {
+    // sample count updated, reset waiting period
+    waited = 0
   }
-  const sampleCount = res.rows[0].counter
-  if (++waited > 60 && (sampleCount == storedSamples)) {
-    // something happened, sample count didnt change and we took too long
-    log.warning('Took too long to historize new samples, skipping...')
-    break
-  }
-  storedSamples = sampleCount
+  storedSamples = timingCounter
 }
-log.info('Finished historization of ' + storedSamples + ' samples!')
+log.info('Finished historization of samples!')
+log.info(genStats())
 
 log.info('Moving new timing row...')
 await onDatabase(async client =>
   await client.queryArray`
   update historizr.timing
   set id = (select max(id) as id from historizr.timing) + 1, 
-  description = ${storedSamples + ' samples'}
+  description = ${genStats()}
   where id = 1`
 )
 log.info('Moved!')
