@@ -1,6 +1,6 @@
-import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts"
-import * as log from "https://deno.land/std@0.144.0/log/mod.ts"
-import { sleep } from "https://deno.land/x/sleep@v1.2.1/mod.ts";
+import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
+import * as log from 'https://deno.land/std@0.144.0/log/mod.ts'
+import { sleep } from 'https://deno.land/x/sleep@v1.2.1/mod.ts'
 
 import { CFG } from './config.js'
 
@@ -22,7 +22,13 @@ const onDatabase = async op => {
   return res
 }
 
-const runAndWait = async procArgs => {
+const logIf = (cond, to) => {
+  if (cond) {
+    to(cond)
+  }
+}
+
+const runAsync = async procArgs => {
   log.info(`Running command: ${procArgs.join(' ')}`)
   const proc = Deno.run({
     cmd: procArgs,
@@ -33,18 +39,14 @@ const runAndWait = async procArgs => {
     proc.status(),
     proc.output(),
     proc.stderrOutput()
-  ]);
-  proc.close();
-  const err = new TextDecoder().decode(stderr)
-  const out = new TextDecoder().decode(stdout)
-  log.error('Status: ' + status)
-  if (err) {
-    log.error(err)
+  ])
+  proc.close()
+  const decoder = new TextDecoder()
+  return {
+    success: status.success,
+    err: decoder.decode(stderr),
+    out: decoder.decode(stdout)
   }
-  if (out) {
-    log.error(out)
-  }
-  return status.success
 }
 
 log.info('Truncating sample table...')
@@ -75,14 +77,11 @@ if (deviceReset.status != 200) {
 log.info('Device state reset!')
 
 log.info('Running sample process...')
-const streamerStatus = await runAndWait(['deno', 'run', '--allow-all',
+const streamerStatusPromise = runAsync(['deno', 'run', '--allow-all',
   CFG.streamer.path,
   CFG.streamer.file,
   CFG.streamer.publishLimit])
-log.info('Ran sample process!')
-if (!streamerStatus) {
-  Deno.exit(1)
-}
+
 const pubLimit = CFG.streamer.publishLimit
 let storedSamples = 0
 let totalSeconds = 0
@@ -91,7 +90,7 @@ let waited = 0
 const genStats = () => `${storedSamples}/${pubLimit} samples, `
   + `${(storedSamples / pubLimit * 100.0).toFixed(3)}%, `
   + `${msgsps.toFixed(3)}msg/s, `
-  + `${totalSeconds.toFixed(3)}s `;
+  + `${totalSeconds.toFixed(3)}s `
 log.info('Checking sample historization...')
 while (storedSamples < pubLimit) {
   log.info(genStats())
@@ -117,6 +116,15 @@ while (storedSamples < pubLimit) {
 }
 log.info('Finished historization of samples!')
 log.info(genStats())
+
+log.info('Waiting for sample process...')
+const streamerStatus = await streamerStatusPromise
+log.info('Ran sample process!')
+logIf(streamerStatus.err, log.error)
+logIf(streamerStatus.out, log.info)
+if (!streamerStatus.success) {
+  Deno.exit(1)
+}
 
 log.info('Moving new timing row...')
 await onDatabase(async client =>
