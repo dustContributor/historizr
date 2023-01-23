@@ -25,13 +25,10 @@ public final class SampleRepo implements AutoCloseable {
 	private final Config cfg;
 	private final Vertx vertx;
 	private final ConcurrentHashMap<Long, Sample> samplesById = new ConcurrentHashMap<>();
+	private volatile SampleStats stats = new SampleStats();
 	private MqttClient publisherClient;
 	private MqttClient subscriberClient;
 	private SignalRepo signalRepo;
-	private long receivedCount;
-	private long processedCount;
-	private long skippedCount;
-	private long publishedCount;
 
 	public SampleRepo(Config cfg, Vertx vertx) {
 		this.cfg = Objects.requireNonNull(cfg);
@@ -136,7 +133,12 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	private final void handleMessage(String topic, MqttMessage msg) {
-		++receivedCount;
+		/*
+		 * Local so if the stats object gets swapped by another thread, this thread
+		 * doesnt possibly wrongly increment/modify the counters inside the new stats
+		 */
+		final var stats = this.stats;
+		stats.receivedCount++;
 		LOGGER.fine(() -> "Incoming message:topic: " + msg + ":" + topic);
 		var signal = signalRepo.signalByTopic(topic);
 		if (signal == null) {
@@ -158,12 +160,12 @@ public final class SampleRepo implements AutoCloseable {
 			// Unrecognized mapped data type. Shouldn't happen.
 			return;
 		}
-		++processedCount;
+		stats.processedCount++;
 		var oid = Long.valueOf(signal.id());
 		var changed = samplesById.compute(oid, (key, existing) -> evaluateChange(signal, sample, existing));
 		if (sample != changed) {
 			// Existing sample didn't get updated, wont emit.
-			++skippedCount;
+			stats.skippedCount++;
 			return;
 		}
 		// Encode and send via mqtt.
@@ -173,7 +175,8 @@ public final class SampleRepo implements AutoCloseable {
 		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
 		// Cant publish from the method that handles the subscription event.
 		vertx.runOnContext(new DeferredPublish(publisherClient, outTopic, outMsg));
-		++publishedCount;
+		stats.publishedBytes += payload.length;
+		stats.publishedCount++;
 	}
 
 	public final void removeSample(long id) {
@@ -183,6 +186,10 @@ public final class SampleRepo implements AutoCloseable {
 
 	public final void discardSampleState() {
 		samplesById.clear();
+	}
+
+	public final void discardSampleStats() {
+		this.stats = new SampleStats();
 	}
 
 	public final void subscribe() {
@@ -210,18 +217,26 @@ public final class SampleRepo implements AutoCloseable {
 	}
 
 	public final long receivedCount() {
-		return receivedCount;
+		return stats.receivedCount;
 	}
 
 	public final long processedCount() {
-		return processedCount;
+		return stats.processedCount;
 	}
 
 	public final long skippedCount() {
-		return skippedCount;
+		return stats.skippedCount;
 	}
 
 	public final long publishedCount() {
-		return publishedCount;
+		return stats.publishedCount;
+	}
+
+	public final long publishedBytes() {
+		return stats.publishedBytes;
+	}
+
+	public final SampleStats stats() {
+		return stats.copy();
 	}
 }

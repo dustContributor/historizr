@@ -4,6 +4,7 @@ import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -14,7 +15,7 @@ import io.historizr.shared.db.Signal;
 
 public final class SignalRepo {
 	private static final Logger LOGGER = OpsMisc.classLogger();
-	private final Object signalsLock = new Object();
+	private final ReentrantReadWriteLock signalsLock = new ReentrantReadWriteLock();
 	private final Config cfg;
 	private Map<String, Signal> signalsByTopic;
 	private Map<Long, Signal> signalsById;
@@ -47,8 +48,13 @@ public final class SignalRepo {
 		}
 		LOGGER.info("Data queried!");
 
-		signalsByTopic = signals.stream().collect(Collectors.toMap(k -> k.topic(), v -> v));
-		signalsById = signals.stream().collect(Collectors.toMap(k -> k.id(), v -> v));
+		try {
+			signalsLock.writeLock().lock();
+			signalsByTopic = signals.stream().collect(Collectors.toMap(k -> k.topic(), v -> v));
+			signalsById = signals.stream().collect(Collectors.toMap(k -> k.id(), v -> v));
+		} finally {
+			signalsLock.writeLock().unlock();
+		}
 		dataTypesById = dataTypes.stream().collect(Collectors.toMap(k -> k.id(), v -> v));
 		LOGGER.info("Initialized!");
 
@@ -58,7 +64,8 @@ public final class SignalRepo {
 	public final void updateSignal(Signal signal) {
 		LOGGER.fine(() -> "Updating signal: " + signal);
 		var id = Long.valueOf(signal.id());
-		synchronized (signalsLock) {
+		try {
+			signalsLock.writeLock().lock();
 			var old = signalsById.get(id);
 			if (old != null && !Objects.equals(old.topic(), signal.topic())) {
 				// Topic got updated so we remove it by the old stale topic key.
@@ -67,6 +74,8 @@ public final class SignalRepo {
 			// These will either insert or update the existing entries.
 			signalsById.put(id, signal);
 			signalsByTopic.put(signal.topic(), signal);
+		} finally {
+			signalsLock.writeLock().unlock();
 		}
 	}
 
@@ -74,25 +83,35 @@ public final class SignalRepo {
 		LOGGER.fine(() -> "Removing signal: " + signal);
 		var id = Long.valueOf(signal.id());
 		var isRemoved = false;
-		synchronized (signalsLock) {
+		try {
+			signalsLock.writeLock().lock();
 			var old = signalsById.remove(id);
 			isRemoved = old != null;
 			if (isRemoved) {
 				signalsByTopic.remove(old.topic());
 			}
+		} finally {
+			signalsLock.writeLock().unlock();
 		}
 		return isRemoved;
 	}
 
 	public final Signal signalByTopic(String topic) {
-		synchronized (signalsLock) {
+		try {
+			signalsLock.readLock().lock();
 			return signalsByTopic.get(topic);
+		} finally {
+			signalsLock.readLock().unlock();
 		}
 	}
 
 	public final Signal signalById(long id) {
-		synchronized (signalsLock) {
-			return signalsById.get(Long.valueOf(id));
+		var oid = Long.valueOf(id);
+		try {
+			signalsLock.readLock().lock();
+			return signalsById.get(oid);
+		} finally {
+			signalsLock.readLock().unlock();
 		}
 	}
 

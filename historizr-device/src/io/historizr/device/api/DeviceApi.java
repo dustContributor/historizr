@@ -21,6 +21,7 @@ public final class DeviceApi {
 	private static final String EVENT_ROOT = OpsMisc.className();
 
 	public static final String EVENT_DISCARD_SAMPLE_STATE = EVENT_ROOT + ".discard_sample_state";
+	public static final String EVENT_DISCARD_SAMPLE_STATS = EVENT_ROOT + ".discard_sample_stats";
 
 	public static Router register(Vertx vertx, Router router, SqlClient conn, SampleWorker sampleWorker) {
 		router.get(ROUTE).handler(ctx -> {
@@ -48,17 +49,18 @@ public final class DeviceApi {
 						}
 						if (sampleWorker != null) {
 							var sample = sampleWorker.sampleRepo();
-							res.put("messagesRegistered", sample.registeredCount());
-							res.put("messagesReceived", sample.receivedCount());
-							res.put("messagesProcessed", sample.processedCount());
-							res.put("messagesSkipped", sample.skippedCount());
-							res.put("messagesPublished", sample.publishedCount());
+							var messageStats = sample.stats();
+							res.put("messageStats", messageStats);
 						}
 						ctx.json(res);
 					});
 		});
 		router.post(ROUTE + "/discardsamplestate").handler(ctx -> {
 			vertx.eventBus().publish(EVENT_DISCARD_SAMPLE_STATE, EVENT_DISCARD_SAMPLE_STATE);
+			ok(ctx);
+		});
+		router.post(ROUTE + "/discardsamplestats").handler(ctx -> {
+			vertx.eventBus().publish(EVENT_DISCARD_SAMPLE_STATS, EVENT_DISCARD_SAMPLE_STATS);
 			ok(ctx);
 		});
 		return router;

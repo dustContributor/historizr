@@ -65,6 +65,10 @@ public final class SampleWorker extends AbstractVerticle {
 				sampleRepo.discardSampleState();
 				LOGGER.fine(() -> "Discarded sample state");
 			});
+			discardSampleState = bus.consumer(DeviceApi.EVENT_DISCARD_SAMPLE_STATS).handler(e -> {
+				sampleRepo.discardSampleStats();
+				LOGGER.fine(() -> "Discarded sample stats");
+			});
 			LOGGER.info("Started!");
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "Failed to start", e);
