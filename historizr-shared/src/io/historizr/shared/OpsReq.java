@@ -10,6 +10,17 @@ public final class OpsReq {
 		throw new RuntimeException();
 	}
 
+	private static final Object OK = new Object() {
+		@SuppressWarnings("unused")
+		public final String getStatus() {
+			return "ok";
+		}
+	};
+
+	public static final void ok(RoutingContext ctx) {
+		ctx.json(OK);
+	}
+
 	public static final boolean failed(AsyncResult<?> res, RoutingContext ctx) {
 		if (res.succeeded()) {
 			return false;

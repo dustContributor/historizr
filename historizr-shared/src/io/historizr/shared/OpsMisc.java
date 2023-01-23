@@ -5,9 +5,11 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.tracing.TracingPolicy;
@@ -133,5 +135,13 @@ public final class OpsMisc {
 
 	public static final EventBus sendJson(EventBus bus, String address, JsonObject obj) {
 		return bus.send(address, obj, JSON_DELIVERY);
+	}
+
+	public static final <T> EventBus send(EventBus bus, String address, T obj) {
+		return bus.send(address, obj, JSON_DELIVERY);
+	}
+
+	public static final <T, R> Future<Message<R>> request(EventBus bus, String address, T obj) {
+		return bus.request(address, obj, JSON_DELIVERY);
 	}
 }
