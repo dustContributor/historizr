@@ -49,8 +49,9 @@ public final class DeviceApi {
 						}
 						if (sampleWorker != null) {
 							var sample = sampleWorker.sampleRepo();
-							var messageStats = sample.stats();
-							res.put("messageStats", messageStats);
+							var sampleStats = sample.stats();
+							res.put("samplesInRegistry", sample.registeredCount());
+							res.put("sampleStats", sampleStats);
 						}
 						ctx.json(res);
 					});

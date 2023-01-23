@@ -139,6 +139,7 @@ public final class SampleRepo implements AutoCloseable {
 		 */
 		final var stats = this.stats;
 		stats.receivedCount++;
+		stats.receivedBytes += msg.getPayload().length;
 		LOGGER.fine(() -> "Incoming message:topic: " + msg + ":" + topic);
 		var signal = signalRepo.signalByTopic(topic);
 		if (signal == null) {
@@ -175,8 +176,8 @@ public final class SampleRepo implements AutoCloseable {
 		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
 		// Cant publish from the method that handles the subscription event.
 		vertx.runOnContext(new DeferredPublish(publisherClient, outTopic, outMsg));
-		stats.publishedBytes += payload.length;
 		stats.publishedCount++;
+		stats.publishedBytes += payload.length;
 	}
 
 	public final void removeSample(long id) {
