@@ -25,6 +25,8 @@ import io.vertx.sqlclient.Tuple;
 public final class SignalWorker extends AbstractVerticle {
 	private static final Logger LOGGER = OpsMisc.classLogger();
 	public static final String API_DEVICE = "/device";
+	public static final String API_DEVICE_DISCARD_SAMPLE_STATE = API_DEVICE + "/discardsamplestate";
+	public static final String API_DEVICE_DISCARD_SAMPLE_STATS = API_DEVICE + "/discardsamplestats";
 	public static final String API_SIGNAL = "/signal";
 
 	private final SqlClient conn;

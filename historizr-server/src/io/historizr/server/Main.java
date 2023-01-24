@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import io.historizr.server.api.DataTypeApi;
 import io.historizr.server.api.DeviceApi;
+import io.historizr.server.api.DeviceOpsApi;
 import io.historizr.server.api.DeviceTypeApi;
 import io.historizr.server.api.SignalApi;
 import io.historizr.server.tmpl.PugTemplateEngine;
@@ -56,6 +57,7 @@ public final class Main extends AbstractVerticle {
 		router.route().handler(BodyHandler.create(false));
 		// Register api endpoints.
 		DeviceApi.register(vertx, router, jdbc);
+		DeviceOpsApi.register(vertx, router, jdbc);
 		DeviceTypeApi.register(vertx, router, jdbc);
 		SignalApi.register(vertx.eventBus(), router, jdbc);
 		DataTypeApi.register(vertx.eventBus(), router, jdbc);
