@@ -27,6 +27,8 @@ public final class DeviceOpsApi {
 
 	private static final String ROUTE = "/deviceops";
 	public static final String ROUTE_STATUS = ROUTE + "/status";
+	public static final String ROUTE_DISCARD_SAMPLE_STATE = ROUTE + "/discardsamplestate";
+	public static final String ROUTE_DISCARD_SAMPLE_STATS = ROUTE + "/discardsamplestats";
 
 	public static Router register(Vertx vertx, Router router, SqlClient conn) {
 		var toModels = Collectors.mapping(Device::of, Collectors.toList());
@@ -55,7 +57,7 @@ public final class DeviceOpsApi {
 						ctx.fail(r);
 					});
 		});
-		router.post(ROUTE + "/discardsamplestate").handler(ctx -> {
+		router.post(ROUTE_DISCARD_SAMPLE_STATE).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
 			conn.preparedQuery(Db.Device.QUERY_BY_ID)
 					.collecting(toModels)
@@ -67,7 +69,7 @@ public final class DeviceOpsApi {
 						}
 						var device = rows.get(0);
 						return client
-								.get(device.port(), device.address().getHostAddress(),
+								.post(device.port(), device.address().getHostAddress(),
 										SignalWorker.API_DEVICE_DISCARD_SAMPLE_STATE)
 								.send();
 					}).onSuccess(r -> {
@@ -78,7 +80,7 @@ public final class DeviceOpsApi {
 						ctx.fail(r);
 					});
 		});
-		router.post(ROUTE + "/discardsamplestats").handler(ctx -> {
+		router.post(ROUTE_DISCARD_SAMPLE_STATS).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
 			conn.preparedQuery(Db.Device.QUERY_BY_ID)
 					.collecting(toModels)
@@ -90,7 +92,7 @@ public final class DeviceOpsApi {
 						}
 						var device = rows.get(0);
 						return client
-								.get(device.port(), device.address().getHostAddress(),
+								.post(device.port(), device.address().getHostAddress(),
 										SignalWorker.API_DEVICE_DISCARD_SAMPLE_STATS)
 								.send();
 					}).onSuccess(r -> {

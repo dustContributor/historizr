@@ -1,20 +1,32 @@
 doctype html
 html(lang="en")
   head
-    title= 'Devices'
+    title= 'Device Status'
   body
     include style.pug
     table.app-table
       tr
-        th='Name'
+        th='Prop'
         th='Value'
       each entry in props.entrySet()
         tr
-          if !empty(entry.value.entrySet())
-            each subentry in entry.value.entrySet()
-              tr
-                td=entry.key+'.'+subentry.key
-                td(class=subentry.value.longValue() != null ? 'app-num' : '')=subentry.value
-          else 
-            td=entry.key
-            td(class=entry.value.longValue() != null ? 'app-num' : '')=entry.value
+          td=entry.key
+          td(class=entry.value.longValue() != null ? 'app-num' : '')=entry.value
+      tr 
+        td='Command'
+        td.app-btn 
+          a(href='devicestatus/discardstate?deviceId='+props.id)
+            input(type='button', value='Discard Registry')
+    table.app-table
+      tr
+        th='Stat'
+        th='Value'
+      each entry in stats.entrySet()
+        tr
+          td=entry.key
+          td(class=entry.value.longValue() != null ? 'app-num' : '')=entry.value
+      tr 
+        td='Command'
+        td.app-btn 
+          a(href='devicestatus/discardstats?deviceId='+props.id)
+            input(type='button', value='Discard Stats')
