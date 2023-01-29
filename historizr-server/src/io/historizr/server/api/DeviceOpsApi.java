@@ -26,12 +26,13 @@ public final class DeviceOpsApi {
 	private static final Logger LOGGER = OpsMisc.classLogger();
 
 	private static final String ROUTE = "/deviceops";
+	public static final String ROUTE_STATUS = ROUTE + "/status";
 
 	public static Router register(Vertx vertx, Router router, SqlClient conn) {
 		var toModels = Collectors.mapping(Device::of, Collectors.toList());
 		var modelType = Device.class;
 		var client = WebClient.create(vertx);
-		router.post(ROUTE + "/status").handler(ctx -> {
+		router.post(ROUTE_STATUS).handler(ctx -> {
 			var entity = ctx.body().asPojo(modelType);
 			conn.preparedQuery(Db.Device.QUERY_BY_ID)
 					.collecting(toModels)

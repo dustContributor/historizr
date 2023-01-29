@@ -1,0 +1,20 @@
+doctype html
+html(lang="en")
+  head
+    title= 'Devices'
+  body
+    include style.pug
+    table.app-table
+      tr
+        th='Name'
+        th='Value'
+      each entry in props.entrySet()
+        tr
+          if !empty(entry.value.entrySet())
+            each subentry in entry.value.entrySet()
+              tr
+                td=entry.key+'.'+subentry.key
+                td(class=subentry.value.longValue() != null ? 'app-num' : '')=subentry.value
+          else 
+            td=entry.key
+            td(class=entry.value.longValue() != null ? 'app-num' : '')=entry.value
