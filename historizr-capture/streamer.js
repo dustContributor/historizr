@@ -4,10 +4,6 @@ import { CFG } from './config.js'
 import { Broker } from './broker.js'
 import { matchOn } from './utils.js'
 
-if (!CFG.streamer) {
-  throw 'streamer config missing!'
-}
-
 log.info('opening file...')
 const file = await Deno.open(Deno.args[0] || CFG.streamer.file);
 const pubLimit = matchOn(Number.parseInt(Deno.args[1]),
@@ -15,7 +11,7 @@ const pubLimit = matchOn(Number.parseInt(Deno.args[1]),
   v => v) || CFG.streamer.publishLimit || 0
 const brokerUrl = matchOn(Deno.args[2],
   v => typeof v !== 'string', null,
-  v => 'mqtt://' + v) || CFG.streamer.brokerUrl || ''
+  v => v.startsWith('mqtt://') ? v : ('mqtt://' + v)) || CFG.brokerUrl || ''
 const readable = file.readable
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(new CsvStream());
