@@ -10,9 +10,12 @@ if (!CFG.streamer) {
 
 log.info('opening file...')
 const file = await Deno.open(Deno.args[0] || CFG.streamer.file);
-const pubLimit = matchOn(Number.parseInt(Deno.args[1]), 
-  Number.isNaN, 0, 
+const pubLimit = matchOn(Number.parseInt(Deno.args[1]),
+  Number.isNaN, 0,
   v => v) || CFG.streamer.publishLimit || 0
+const brokerUrl = matchOn(Deno.args[2],
+  v => typeof v !== 'string', null,
+  v => 'mqtt://' + v) || CFG.streamer.brokerUrl || ''
 const readable = file.readable
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(new CsvStream());
@@ -87,7 +90,11 @@ const tryParseName = v => {
 }
 
 log.info('connecting to broker...')
-const client = await Broker.make(CFG);
+const client = await Broker.make({
+  brokerUrl: brokerUrl,
+  mqttClientId: CFG.mqttClientId,
+  cleanSession: CFG.cleanSession
+});
 log.info('connected!')
 
 const toTopic = v =>
@@ -182,7 +189,7 @@ for await (const row of readable) {
   }
   await client.publish(topic, JSON.stringify(payload))
   ++count
-  if(pubLimit > 0 && count >= pubLimit) {
+  if (pubLimit > 0 && count >= pubLimit) {
     // Reached max publications
     break
   }

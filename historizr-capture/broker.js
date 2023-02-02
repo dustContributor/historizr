@@ -25,11 +25,11 @@ export class Broker {
     return this.#client.on('message', e)
   }
 
-  static async make(cfg) {
+  static async make({ mqttClientId, brokerUrl, cleanSession }) {
     const client = new Client({
-      clientId: cfg.mqttClientId,
-      url: cfg.brokerUrl,
-      clean: cfg.cleanSession
+      clientId: mqttClientId,
+      url: brokerUrl,
+      clean: cleanSession
     })
     await client.connect()
 
