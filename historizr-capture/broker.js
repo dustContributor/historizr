@@ -25,7 +25,14 @@ export class Broker {
     return this.#client.on('message', e)
   }
 
-  static async make({ mqttClientId, brokerUrl, cleanSession }) {
+  static async make({
+    mqttClientId,
+    brokerUrl,
+    cleanSession,
+    retainMessage,
+    qualityOfService,
+    destTopic
+  }) {
     const client = new Client({
       clientId: mqttClientId,
       url: brokerUrl,
@@ -34,15 +41,14 @@ export class Broker {
     await client.connect()
 
     const pubOpts = {
-      retain: cfg.retainMessage,
-      qos: cfg.qualityOfService
+      retain: retainMessage,
+      qos: qualityOfService
     };
-    const destTopic = utils.separatorEnd(cfg.destTopic)
 
     return new Broker({
       client: client,
       pubOpts: pubOpts,
-      destTopic: destTopic
+      destTopic: utils.separatorEnd(destTopic)
     })
   }
 }

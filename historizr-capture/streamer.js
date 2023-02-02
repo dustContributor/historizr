@@ -87,9 +87,12 @@ const tryParseName = v => {
 
 log.info('connecting to broker...')
 const client = await Broker.make({
-  brokerUrl: brokerUrl,
   mqttClientId: CFG.mqttClientId,
-  cleanSession: CFG.cleanSession
+  cleanSession: CFG.cleanSession,
+  retainMessage: CFG.retainMessage,
+  qualityOfService: CFG.qualityOfService,
+  destTopic: CFG.destTopic,
+  brokerUrl: brokerUrl
 });
 log.info('connected!')
 
