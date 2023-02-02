@@ -65,7 +65,8 @@ await onDatabase(async client =>
 log.info('Moved!')
 
 log.info('Resetting the device state...')
-const deviceReset = await fetch(CFG.device.host + CFG.device.resetEndpoint, {
+const deviceReset = await fetch(
+  `http://${CFG.device.host}:${CFG.device.apiPort}${CFG.device.resetEndpoint}`, {
   method: 'POST'
 })
 if (deviceReset.status != 200) {
@@ -80,7 +81,8 @@ log.info('Running sample process...')
 const streamerStatusPromise = runAsync(['deno', 'run', '--allow-all',
   CFG.streamer.path,
   CFG.streamer.file,
-  CFG.streamer.publishLimit])
+  CFG.streamer.publishLimit,
+  `${CFG.device.host}:${CFG.device.brokerPort}`])
 
 const pubLimit = CFG.streamer.publishLimit
 let storedSamples = 0

@@ -8,6 +8,8 @@ export const CFG = Object.freeze({
   }),
   device: Object.freeze({
     host: '',
+    apiPort: 443,
+    brokerPort: 1883,
     resetEndpoint: '/device/discardsamplestate'
   }),
   debug: false,
