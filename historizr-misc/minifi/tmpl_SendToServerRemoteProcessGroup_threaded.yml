@@ -33,7 +33,7 @@ Provenance Repository:
   implementation: org.apache.nifi.provenance.WriteAheadProvenanceRepository
   provenance index shard size: 500 MB
   provenance max storage size: 1 GB
-  provenance max storage time: 24 hours
+  provenance max storage time: 12 hours
   provenance buffer size: 10000
 Component Status Repository:
   buffer size: 1440
