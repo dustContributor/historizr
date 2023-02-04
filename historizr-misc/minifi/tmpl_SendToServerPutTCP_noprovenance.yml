@@ -1,0 +1,130 @@
+MiNiFi Config Version: 3
+Flow Controller:
+  name: tmpl_SendToServerPutTCP
+  comment: ''
+Core Properties:
+  flow controller graceful shutdown period: 10 sec
+  flow service write delay interval: 500 ms
+  administrative yield duration: 30 sec
+  bored yield duration: 10 millis
+  max concurrent threads: 1
+  variable registry properties: ''
+FlowFile Repository:
+  implementation: org.apache.nifi.controller.repository.WriteAheadFlowFileRepository
+  partitions: 256
+  checkpoint interval: 2 mins
+  always sync: false
+  Swap:
+    threshold: 20000
+    in period: 5 sec
+    in threads: 1
+    out period: 5 sec
+    out threads: 4
+Content Repository:
+  implementation: org.apache.nifi.controller.repository.FileSystemRepository
+  content claim max appendable size: 10 MB
+  content claim max flow files: 100
+  content repository archive enabled: false
+  content repository archive max retention period: 12 hours
+  content repository archive max usage percentage: 90%
+  always sync: false
+Provenance Repository:
+  implementation: org.apache.nifi.provenance.VolatileProvenanceRepository
+  provenance buffer size: 100
+Component Status Repository:
+  buffer size: 1440
+  snapshot frequency: 1 min
+Security Properties:
+  keystore: ''
+  keystore type: ''
+  keystore password: ''
+  key password: ''
+  truststore: ''
+  truststore type: ''
+  truststore password: ''
+  ssl protocol: ''
+  Sensitive Props:
+    key:
+    algorithm: NIFI_PBKDF2_AES_GCM_256
+Processors:
+- id: 7106066c-d746-31c0-0000-000000000000
+  name: ConsumeMQTT
+  class: org.apache.nifi.processors.mqtt.ConsumeMQTT
+  max concurrent tasks: 1
+  scheduling strategy: TIMER_DRIVEN
+  scheduling period: 0 sec
+  penalization period: 30 sec
+  yield period: 1 sec
+  run duration nanos: 0
+  auto-terminated relationships list:
+  - parse.failure
+  Properties:
+    Broker URI: tcp://localhost:1883
+    Client ID: minifi
+    Connection Timeout (seconds): '30'
+    Keep Alive Interval (seconds): '60'
+    MQTT Specification Version: '0'
+    Max Queue Size: '4096'
+    Quality of Service(QoS): '1'
+    Session state: 'true'
+    Topic Filter: output/#
+    add-attributes-as-fields: 'false'
+- id: 5b598f9e-f595-3234-0000-000000000000
+  name: PutTCP
+  class: org.apache.nifi.processors.standard.PutTCP
+  max concurrent tasks: 1
+  scheduling strategy: TIMER_DRIVEN
+  scheduling period: 0 sec
+  penalization period: 30 sec
+  yield period: 1 sec
+  run duration nanos: 0
+  auto-terminated relationships list:
+  - success
+  Properties:
+    Character Set: UTF-8
+    Connection Per FlowFile: 'false'
+    Hostname: srvdeb01
+    Idle Connection Expiration: 15 seconds
+    Max Size of Socket Send Buffer: 1 MB
+    Outgoing Message Delimiter: \n\n
+    Port: '9980'
+    SSL Context Service:
+    Timeout: 10 seconds
+Controller Services: []
+Process Groups: []
+Input Ports: []
+Output Ports: []
+Funnels:
+- id: 2308861b-afd2-3ccf-0000-000000000000
+Connections:
+- id: 12097a0c-d32e-3c5e-0000-000000000000
+  name: ConsumeMQTT/Message/2308861b-afd2-3ccf-0000-000000000000
+  source id: 7106066c-d746-31c0-0000-000000000000
+  source relationship names:
+  - Message
+  destination id: 2308861b-afd2-3ccf-0000-000000000000
+  max work queue size: 10000
+  max work queue data size: 1 GB
+  flowfile expiration: 0 sec
+  queue prioritizer class: ''
+- id: ff17365b-aeee-3c47-0000-000000000000
+  name: MessageBuffer
+  source id: 2308861b-afd2-3ccf-0000-000000000000
+  source relationship names: []
+  destination id: 5b598f9e-f595-3234-0000-000000000000
+  max work queue size: 1000000
+  max work queue data size: 8 GB
+  flowfile expiration: 0 sec
+  queue prioritizer class: org.apache.nifi.prioritizer.OldestFlowFileFirstPrioritizer
+- id: f4ad37e7-126f-3714-0000-000000000000
+  name: PutTCP/failure/2308861b-afd2-3ccf-0000-000000000000
+  source id: 5b598f9e-f595-3234-0000-000000000000
+  source relationship names:
+  - failure
+  destination id: 2308861b-afd2-3ccf-0000-000000000000
+  max work queue size: 10000
+  max work queue data size: 1 GB
+  flowfile expiration: 0 sec
+  queue prioritizer class: ''
+Remote Process Groups: []
+NiFi Properties Overrides: {}

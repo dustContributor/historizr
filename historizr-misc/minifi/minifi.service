@@ -1,0 +1,14 @@
+[Unit]
+Description=Apache MiNiFi
+After=network.target
+
+[Service]
+Type=forking
+#User=nifi
+#Group=nifi
+ExecStart=/opt/minifi/bin/minifi.sh start
+ExecStop=/opt/minifi/bin/minifi.sh stop
+ExecReload=/opt/minifi/bin/minifi.sh restart 
+
+[Install]
+WantedBy=default.target

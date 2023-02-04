@@ -1,0 +1,129 @@
+MiNiFi Config Version: 3
+Flow Controller:
+  name: tmpl_SendToServerRemoteProcessGroup
+  comment: ''
+Core Properties:
+  flow controller graceful shutdown period: 10 sec
+  flow service write delay interval: 500 ms
+  administrative yield duration: 30 sec
+  bored yield duration: 10 millis
+  max concurrent threads: 1
+  variable registry properties: ''
+FlowFile Repository:
+  implementation: org.apache.nifi.controller.repository.WriteAheadFlowFileRepository
+  partitions: 256
+  checkpoint interval: 2 mins
+  always sync: false
+  Swap:
+    threshold: 20000
+    in period: 5 sec
+    in threads: 1
+    out period: 5 sec
+    out threads: 4
+Content Repository:
+  implementation: org.apache.nifi.controller.repository.FileSystemRepository
+  content claim max appendable size: 10 MB
+  content claim max flow files: 100
+  content repository archive enabled: false
+  content repository archive max retention period: 12 hours
+  content repository archive max usage percentage: 90%
+  always sync: false
+Provenance Repository:
+  implementation: org.apache.nifi.provenance.VolatileProvenanceRepository
+  provenance buffer size: 100
+Component Status Repository:
+  buffer size: 1440
+  snapshot frequency: 1 min
+Security Properties:
+  keystore: ''
+  keystore type: ''
+  keystore password: ''
+  key password: ''
+  truststore: ''
+  truststore type: ''
+  truststore password: ''
+  ssl protocol: ''
+  Sensitive Props:
+    key:
+    algorithm: NIFI_PBKDF2_AES_GCM_256
+Processors:
+- id: e21feedd-e88e-348c-0000-000000000000
+  name: ConsumeMQTT
+  class: org.apache.nifi.processors.mqtt.ConsumeMQTT
+  max concurrent tasks: 1
+  scheduling strategy: TIMER_DRIVEN
+  scheduling period: 0 sec
+  penalization period: 30 sec
+  yield period: 1 sec
+  run duration nanos: 0
+  auto-terminated relationships list:
+  - parse.failure
+  Properties:
+    Broker URI: tcp://localhost:1883
+    Client ID: minifi
+    Connection Timeout (seconds): '30'
+    Group ID:
+    Keep Alive Interval (seconds): '60'
+    Last Will Message:
+    Last Will QoS Level:
+    Last Will Retain:
+    Last Will Topic:
+    MQTT Specification Version: '0'
+    Max Queue Size: '4096'
+    Password:
+    Quality of Service(QoS): '1'
+    SSL Context Service:
+    Session state: 'true'
+    Topic Filter: output/#
+    Username:
+    add-attributes-as-fields: 'false'
+    message-demarcator:
+    record-reader:
+    record-writer:
+Controller Services: []
+Process Groups: []
+Input Ports: []
+Output Ports: []
+Funnels:
+- id: fe636d29-54b8-3f2a-0000-000000000000
+Connections:
+- id: 1039c02b-7074-3a10-0000-000000000000
+  name: ConsumeMQTT/Message/fe636d29-54b8-3f2a-0000-000000000000
+  source id: e21feedd-e88e-348c-0000-000000000000
+  source relationship names:
+  - Message
+  destination id: fe636d29-54b8-3f2a-0000-000000000000
+  max work queue size: 10000
+  max work queue data size: 1 GB
+  flowfile expiration: 0 sec
+  queue prioritizer class: ''
+- id: 74eb6965-86ab-3b99-0000-000000000000
+  name: MessageBuffer
+  source id: fe636d29-54b8-3f2a-0000-000000000000
+  source relationship names: []
+  destination id: cd773c41-0185-1000-cd5d-699bb0c094c6
+  max work queue size: 1000000
+  max work queue data size: 8 GB
+  flowfile expiration: 0 sec
+  queue prioritizer class: org.apache.nifi.prioritizer.OldestFlowFileFirstPrioritizer
+Remote Process Groups:
+- id: c8b2d9c4-a7ac-3559-0000-000000000000
+  name: ''
+  url: http://srvdeb01:8080/nifi
+  comment: ''
+  timeout: 30 sec
+  yield period: 10 sec
+  transport protocol: RAW
+  proxy host: ''
+  proxy port: ''
+  proxy user: ''
+  proxy password: ''
+  local network interface: ''
+  Input Ports:
+  - id: cd773c41-0185-1000-cd5d-699bb0c094c6
+    name: ListenRemoteInput
+    comment: ''
+    max concurrent tasks: 1
+    use compression: false
+  Output Ports: []
+NiFi Properties Overrides: {}
