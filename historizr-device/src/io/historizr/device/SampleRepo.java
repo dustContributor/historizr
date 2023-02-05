@@ -1,5 +1,6 @@
 package io.historizr.device;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Objects;
@@ -10,6 +11,7 @@ import java.util.logging.Logger;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -35,7 +37,7 @@ public final class SampleRepo implements AutoCloseable {
 		this.vertx = Objects.requireNonNull(vertx);
 	}
 
-	public final SampleRepo init(SignalRepo signalRepo) throws MqttException {
+	public final SampleRepo init(SignalRepo signalRepo) throws MqttException, IOException {
 		LOGGER.info("Initializing...");
 		this.signalRepo = Objects.requireNonNull(signalRepo);
 		var clientId = makeClientId();
@@ -45,12 +47,17 @@ public final class SampleRepo implements AutoCloseable {
 		return this;
 	}
 
-	private final MqttClient connectClient(String baseId, String sufix) throws MqttException {
+	private final MqttClient connectClient(String baseId, String sufix) throws MqttException, IOException {
 		var clientId = baseId + '_' + sufix;
 		LOGGER.info("Creating MQTT " + sufix + " client");
 		var client = new MqttClient(cfg.broker(), clientId, null);
+		var opts = new MqttConnectOptions();
+		if (cfg.brokerOptions() != null) {
+			opts = OpsJson.readerForUpdating(opts)
+					.readValue(OpsJson.toObjectNode(cfg.brokerOptions()));
+		}
 		LOGGER.info("Connecting to broker with client id " + clientId + "...");
-		client.connect();
+		client.connect(opts);
 		LOGGER.info("Connected!");
 		return client;
 	}

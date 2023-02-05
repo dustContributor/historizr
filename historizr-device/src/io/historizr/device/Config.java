@@ -3,6 +3,7 @@ package io.historizr.device;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.Map;
 
 import io.historizr.shared.OpsJson;
 import io.vertx.core.json.JsonObject;
@@ -10,6 +11,7 @@ import io.vertx.core.json.JsonObject;
 public record Config(
 		String clientId,
 		String broker,
+		Map<String, Object> brokerOptions,
 		String db,
 		String inputTopic,
 		String outputTopic,
