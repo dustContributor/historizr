@@ -27,6 +27,10 @@ public final class OpsJson {
 		return JSON.reader();
 	}
 
+	public static final ObjectReader readerForUpdating(Object o) {
+		return JSON.readerForUpdating(o);
+	}
+
 	public static final String toString(Object o) {
 		try {
 			return JSON.writeValueAsString(o);
