@@ -1,0 +1,14 @@
+[Unit]
+Description=Service for capturing and emitting MQTT data
+After=network.target
+Wants=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/historizr-device/historizr-device_service start
+ExecStop=/opt/historizr-device/historizr-device_service stop
+ExecReload=/opt/historizr-device/historizr-device_service restart
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
