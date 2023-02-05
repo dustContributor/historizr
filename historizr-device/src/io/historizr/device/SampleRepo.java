@@ -71,13 +71,17 @@ public final class SampleRepo implements AutoCloseable {
 		LOGGER.info("Closed!");
 	}
 
-	private static record DeferredPublish(MqttClient client, String topic, MqttMessage message)
+	private static record DeferredPublish(SampleStats stats, MqttClient client, String topic, MqttMessage message)
 			implements Handler<Void> {
 		@Override
 		public final void handle(Void event) {
 			try {
+				var payloadLen = message.getPayload().length;
 				client.publish(topic, message);
+				stats.publishedCount++;
+				stats.publishedBytes += payloadLen;
 			} catch (MqttException e) {
+				stats.failedCount++;
 				throw new RuntimeException(e);
 			}
 		}
@@ -175,9 +179,7 @@ public final class SampleRepo implements AutoCloseable {
 		var outTopic = cfg.outputTopic() + signal.name();
 		LOGGER.fine(() -> "Publishing message:topic: " + outMsg + ":" + outTopic);
 		// Cant publish from the method that handles the subscription event.
-		vertx.runOnContext(new DeferredPublish(publisherClient, outTopic, outMsg));
-		stats.publishedCount++;
-		stats.publishedBytes += payload.length;
+		vertx.runOnContext(new DeferredPublish(stats, publisherClient, outTopic, outMsg));
 	}
 
 	public final void removeSample(long id) {
