@@ -89,7 +89,9 @@ let storedSamples = 0
 let totalSeconds = 0
 let msgsps = 0
 let waited = 0
-const genStats = () => `${storedSamples}/${pubLimit} samples, `
+const genStats = () =>
+  `name: ${CFG.name || 'UNK'}, `
+  + `${storedSamples}/${pubLimit} samples, `
   + `${(storedSamples / pubLimit * 100.0).toFixed(3)}%, `
   + `${msgsps.toFixed(3)}msg/s, `
   + `${totalSeconds.toFixed(3)}s `
@@ -105,7 +107,7 @@ while (storedSamples < pubLimit) {
   totalSeconds = Number.parseFloat(timing?.total_seconds) || 0
   const timingCounter = Number.parseInt(timing?.counter) || 0
   if (timingCounter == storedSamples) {
-    if (++waited > 60) {
+    if (++waited > CFG.storingTimeout) {
       // something happened, sample count didnt change and we took too long
       log.warning('Took too long to historize new samples, skipping...')
       break

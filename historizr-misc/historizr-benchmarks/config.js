@@ -13,9 +13,11 @@ export const CFG = Object.freeze({
     resetEndpoint: '/device/discardsamplestate'
   }),
   debug: false,
+  name: 'http',
   streamer: Object.freeze({
     path: 'streamer.js',
     file: 'data.csv',
     publishLimit: 0
-  })
+  }),
+  storingTimeout: 30
 });
